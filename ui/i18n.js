@@ -740,7 +740,13 @@ const I18N = {
   "wr.t_builder": "The Crafter",
   "wr.t_builder_d": "If it can be crafted, you crafted it.",
   "wr.t_explorer": "The Explorer",
-  "wr.t_explorer_d": "A bit of everything — the true Minecraft spirit."
+  "wr.t_explorer_d": "A bit of everything — the true Minecraft spirit.",
+  "vk.release": "Releases",
+  "vk.snapshot": "Snapshots",
+  "vk.old_beta": "Beta",
+  "vk.old_alpha": "Alpha",
+  "vk.old_note": "The very first versions of Minecraft: vanilla only, no mods. Sounds may be missing — that's how they were.",
+  "vk.snap_note": "Test builds: things can break, back up your worlds."
  },
  "ru": {
   "u.gb": "ГБ",
@@ -1482,7 +1488,13 @@ const I18N = {
   "wr.t_builder": "Мастер крафта",
   "wr.t_builder_d": "Если это можно скрафтить — ты скрафтил.",
   "wr.t_explorer": "Исследователь",
-  "wr.t_explorer_d": "Всего понемногу — настоящий дух Minecraft."
+  "wr.t_explorer_d": "Всего понемногу — настоящий дух Minecraft.",
+  "vk.release": "Релизы",
+  "vk.snapshot": "Снапшоты",
+  "vk.old_beta": "Бета",
+  "vk.old_alpha": "Альфа",
+  "vk.old_note": "Самые первые версии Minecraft: только ваниль, без модов. Звуков может не быть — так и было.",
+  "vk.snap_note": "Тестовые сборки: что-то может ломаться, делай бэкапы миров."
  },
  "uk": {
   "u.gb": "ГБ",
@@ -2224,7 +2236,13 @@ const I18N = {
   "wr.t_builder": "Майстер крафту",
   "wr.t_builder_d": "Якщо це можна скрафтити — ти скрафтив.",
   "wr.t_explorer": "Дослідник",
-  "wr.t_explorer_d": "Всього потроху — справжній дух Minecraft."
+  "wr.t_explorer_d": "Всього потроху — справжній дух Minecraft.",
+  "vk.release": "Релізи",
+  "vk.snapshot": "Снапшоти",
+  "vk.old_beta": "Бета",
+  "vk.old_alpha": "Альфа",
+  "vk.old_note": "Найперші версії Minecraft: лише ваніль, без модів. Звуків може не бути — так і було.",
+  "vk.snap_note": "Тестові збірки: щось може ламатися, роби бекапи світів."
  },
  "de": {
   "u.gb": "GB",
@@ -2966,7 +2984,13 @@ const I18N = {
   "wr.t_builder": "Der Handwerker",
   "wr.t_builder_d": "Was man craften kann, hast du gecraftet.",
   "wr.t_explorer": "Der Entdecker",
-  "wr.t_explorer_d": "Von allem etwas — der wahre Minecraft-Geist."
+  "wr.t_explorer_d": "Von allem etwas — der wahre Minecraft-Geist.",
+  "vk.release": "Releases",
+  "vk.snapshot": "Snapshots",
+  "vk.old_beta": "Beta",
+  "vk.old_alpha": "Alpha",
+  "vk.old_note": "Die allerersten Minecraft-Versionen: nur Vanilla, keine Mods. Sounds können fehlen — so war es damals.",
+  "vk.snap_note": "Testversionen: Dinge können kaputtgehen, sichere deine Welten."
  },
  "es": {
   "u.gb": "GB",
@@ -3708,6 +3732,12 @@ const I18N = {
   "wr.t_builder": "El Artesano",
   "wr.t_builder_d": "Si se puede craftear, tú lo crafteaste.",
   "wr.t_explorer": "El Explorador",
-  "wr.t_explorer_d": "Un poco de todo: el verdadero espíritu de Minecraft."
+  "wr.t_explorer_d": "Un poco de todo: el verdadero espíritu de Minecraft.",
+  "vk.release": "Versiones",
+  "vk.snapshot": "Snapshots",
+  "vk.old_beta": "Beta",
+  "vk.old_alpha": "Alfa",
+  "vk.old_note": "Las primeras versiones de Minecraft: solo vanilla, sin mods. Puede que falten sonidos: así eran.",
+  "vk.snap_note": "Versiones de prueba: algo puede fallar, haz copias de tus mundos."
  }
 };

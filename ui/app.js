@@ -674,14 +674,37 @@ function openCreate() {
       <div class="seg" id="nTpl" style="grid-template-columns:repeat(3,1fr)">${[["", "cr.empty"], ["fps", "tpl.fps"], ["shaders", "tpl.shaders"]].map(([k, l]) => `<button data-k="${k}" class="${k === newTpl ? "on" : ""}" style="text-transform:none" onclick="setNewTpl('${k}')">${T(l)}</button>`).join("")}</div></div>
     <div class="field" id="nLoaderField"><label>${T("cr.loader")}</label><p>${T("cr.loader_sub")}</p>
       <div class="seg" id="nLoader">${LOADERS.map(l => `<button data-l="${l}" class="${l === newLoader ? "on" : ""}" onclick="setNewLoader('${l}')">${loaderName(l)}</button>`).join("")}</div></div>
-    <div class="field"><label>${T("cr.version")}</label><select class="input" id="nVer">${vs.map(v => `<option>${esc(v)}</option>`).join("")}</select></div>
+    <div class="field"><label>${T("cr.version")}</label>
+      <div class="chips" id="nKind" style="margin:4px 0 8px">${VER_KINDS.map(k => `<button class="fchip ${k === verKind ? "on" : ""}" data-k="${k}" onclick="setVerKind('${k}')">${T("vk." + k)}</button>`).join("")}</div>
+      <select class="input" id="nVer">${vs.map(v => `<option>${esc(v)}</option>`).join("")}</select>
+      <p id="nKindNote" style="font-size:12px;color:var(--muted);margin:6px 0 0"></p></div>
     <div class="foot"><button class="btn" onclick="closeModal()">${T("btn.cancel")}</button><button class="btn brand" onclick="createInst()">${ico("plus")}${T("cr.create")}</button></div>`);
   setTimeout(() => $("#nName")?.focus(), 50);
+  verKind = "release";
+  loadAllVersions().then(() => setVerKind("release"));
+}
+const VER_KINDS = ["release", "snapshot", "old_beta", "old_alpha"];
+let verKind = "release";
+async function loadAllVersions() {
+  if (S.allVersions && S.allVersions.length) return;
+  try { S.allVersions = await call("get_all_versions"); } catch { S.allVersions = []; }
+}
+function setVerKind(k) {
+  verKind = k;
+  document.querySelectorAll("#nKind .fchip").forEach(b => b.classList.toggle("on", b.dataset.k === k));
+  const list = (S.allVersions || []).filter(v => v.type === k).map(v => v.id);
+  const sel = $("#nVer"); if (!sel) return;
+  sel.innerHTML = (list.length ? list : (k === "release" ? S.versions : [])).map(v => `<option>${esc(v)}</option>`).join("") || `<option>${T("cr.loading")}</option>`;
+  const old = k === "old_beta" || k === "old_alpha";
+  document.querySelectorAll("#nLoader button").forEach(b => { b.disabled = old && b.dataset.l !== "vanilla"; });
+  if (old) setNewLoader("vanilla");
+  $("#nKindNote").textContent = old ? t("vk.old_note") : k === "snapshot" ? t("vk.snap_note") : "";
 }
 async function createInst() {
   const name = $("#nName").value.trim() || t("cr.default_name", {n: S.instances.length + 1});
   const mc = $("#nVer").value;
-  if (!S.versions.includes(mc)) return toast(t("cr.wait_versions"), "error");
+  if (!S.versions.includes(mc) && !(S.allVersions || []).some(v => v.id === mc)) return toast(t("cr.wait_versions"), "error");
+  if (verKind === "old_beta" || verKind === "old_alpha") { newTpl = ""; newLoader = "vanilla"; }
   const id = await call("create_instance", name, mc, newLoader, newIcon ? newIcon.path : null, newTpl || null);
   closeModal(); go("instance", id);
 }

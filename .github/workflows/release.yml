@@ -34,13 +34,21 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Build Elytra.exe
+      - name: Build Elytra
         if: steps.v.outputs.skip == 'false'
         shell: pwsh
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install pywebview minecraft-launcher-lib requests pyinstaller
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name Elytra --icon icon.ico --add-data "ui;ui" --add-data "icon.ico;." launcher.py
+          python -m pip install --upgrade pip wheel
+          python -m pip install pywebview minecraft-launcher-lib requests
+          # PyInstaller with its launcher compiled here instead of the prebuilt one that antivirus
+          # heuristics often flag (a well-known false positive). Falls back to the normal package.
+          python -m pip install --no-binary pyinstaller pyinstaller
+          if ($LASTEXITCODE -ne 0) { python -m pip install pyinstaller }
+          $common = @("--noconfirm", "--windowed", "--name", "Elytra", "--icon", "icon.ico", "--add-data", "ui;ui", "--add-data", "icon.ico;.", "--noupx")
+          # folder build for the installer
+          python -m PyInstaller @common --onedir --distpath build_dir --workpath build_onedir launcher.py
+          # single-file build for the portable download
+          python -m PyInstaller @common --onefile --distpath dist --workpath build_onefile launcher.py
 
       - name: Build installer
         if: steps.v.outputs.skip == 'false'

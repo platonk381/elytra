@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.1"
+VERSION = "0.10.2"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -2212,14 +2212,22 @@ def check_self_update():
     if version_tuple(tag) <= version_tuple(VERSION):
         return None
     exes = [a for a in rel.get("assets", []) if a.get("name", "").lower().endswith(".exe")]
-    # the portable Elytra.exe replaces itself; Elytra-Setup.exe is for new users
-    asset = next((a for a in exes if a["name"].lower() == "elytra.exe"), None) or \
-        next((a for a in exes if "setup" not in a["name"].lower()), None)
+    # installed copies update by running the new installer silently; the portable Elytra.exe replaces itself
+    if is_installed():
+        asset = next((a for a in exes if "setup" in a["name"].lower()), None)
+    else:
+        asset = next((a for a in exes if a["name"].lower() == "elytra.exe"), None) or \
+            next((a for a in exes if "setup" not in a["name"].lower()), None)
     if not asset:
         return None
     _update_info.update(version=tag, url=asset["browser_download_url"], digest=asset.get("digest") or "",
                         notes=(rel.get("body") or "")[:1500], size=asset.get("size", 0))
     return {k: _update_info[k] for k in ("version", "notes", "size")}
+
+
+def is_installed():
+    """Installed by Elytra-Setup.exe (Inno Setup leaves its uninstaller next to the exe)."""
+    return getattr(sys, "frozen", False) and os.path.isfile(os.path.join(os.path.dirname(sys.executable), "unins000.exe"))
 
 
 def apply_self_update_job(task):
@@ -2228,7 +2236,7 @@ def apply_self_update_job(task):
     if not _update_info:
         raise LauncherError("err.not_found")
     exe = sys.executable
-    new = exe + ".new"
+    new = (os.path.join(tempfile.gettempdir(), "Elytra-Setup.part") if is_installed() else exe + ".new")
     task.set_status(msg("st.download", name=f"Elytra {_update_info['version']}"))
     url = _update_info["url"]
     if not url.startswith("https://"):
@@ -2242,6 +2250,14 @@ def apply_self_update_job(task):
     if digest.startswith("sha256:") and digest[7:].lower() != h.hexdigest():
         os.remove(new)
         raise LauncherError("err.corrupt", file="Elytra.exe")
+    if is_installed():
+        setup = os.path.join(tempfile.gettempdir(), f"Elytra-Setup-{_update_info['version']}.exe")
+        os.replace(new, setup)
+        # the installer waits for Elytra to close (CloseApplications), updates the folder and starts Elytra again
+        subprocess.Popen([setup, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/RELAUNCH=1"],
+                         creationflags=0x00000008, close_fds=True)
+        threading.Timer(1.0, lambda: window.destroy()).start()
+        return "done.updating", {"version": _update_info["version"]}
     bat = os.path.join(tempfile.gettempdir(), "elytra_update.bat")
     with open(bat, "w", encoding="utf-8") as f:
         f.write(f"""@echo off

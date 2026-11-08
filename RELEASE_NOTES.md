@@ -1,5 +1,3 @@
-- Elytra Wrapped — monthly recap with a shareable card
-- Elytra Flight — mini-game while modpacks install
-- Every Minecraft version, back to the first alphas
-- Much faster downloads (keep-alive connections, no double verification)
-- Fixed: closing Elytra during an install left it stuck in the background
+- Installer now uses a folder build: starts faster and triggers far fewer antivirus false alarms
+- Installed Elytra updates itself silently through the installer
+- PyInstaller launcher compiled from source in the release build

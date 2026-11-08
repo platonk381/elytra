@@ -1,7 +1,7 @@
 ; Elytra — Windows installer (Inno Setup 6). Built automatically by GitHub Actions (.github/workflows/release.yml);
 ; locally install.bat builds it too if Inno Setup is installed.
 #ifndef AppVer
-  #define AppVer "0.10.1"
+  #define AppVer "0.10.2"
 #endif
 
 [Setup]
@@ -38,11 +38,13 @@ Name: "es"; MessagesFile: "compiler:Languages\Spanish.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
 [Files]
-Source: "dist\Elytra.exe"; DestDir: "{app}"; Flags: ignoreversion
+; folder build (fewer antivirus false alarms and faster start than a single packed exe)
+Source: "build_dir\Elytra\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [InstallDelete]
-; leftovers of the old install.bat setup
+; leftovers of the old install.bat setup and of the previous build's libraries
 Type: files; Name: "{app}\uninstall.bat"
+Type: filesandordirs; Name: "{app}\_internal"
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\Elytra"; Flags: deletekey dontcreatekey
@@ -53,3 +55,5 @@ Name: "{userdesktop}\Elytra"; Filename: "{app}\Elytra.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\Elytra.exe"; Description: "{cm:LaunchProgram,Elytra}"; Flags: nowait postinstall skipifsilent
+; silent self-update from inside Elytra: start it again afterwards
+Filename: "{app}\Elytra.exe"; Flags: nowait; Check: WizardSilent
