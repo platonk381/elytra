@@ -1,18 +1,18 @@
 {
-  "tag_name": "v0.11.0",
-  "body": "## Elytra 0.11.0\r\n\r\n- Новое: **Друзья онлайн**. У каждого свой код друга. Добавь друга по коду, и будет видно, кто в сети и во что играет\r\n- Кнопка «Позвать» отправляет другу приглашение. Если твой мир открыт через «Играть с другом», он зайдёт в один клик\r\n- Режим «Невидимка», если не хочешь, чтобы видели, что ты в сети\r\n- Всё зашифровано, регистрация не нужна\r\n",
+  "tag_name": "v0.12.0",
+  "body": "## Elytra 0.12.0\r\n\r\n- ✨ Новое: **Сборка по описанию**. Напиши словами, во что хочешь поиграть, например «хоррор-выживание с магией на слабый ПК, с друзьями». Elytra сама подберёт популярные совместимые моды, покажет список и соберёт сборку\r\n- Понимает версию, Forge или Fabric, «слабый ПК», «шейдеры», «с друзьями», «карта», «большая сборка»\r\n- Несовместимые моды и дубли отсеиваются автоматически\r\n- Кнопка на главной, в окне создания сборки и в Ctrl+K\r\n",
   "assets": [
     {
       "name": "Elytra-Setup.exe",
-      "size": 13960627,
-      "digest": "sha256:a47c4a930025ee915537d807d6e9d0fe216c3e710fa911fc31a1fc9f77186c3e",
-      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.11.0/Elytra-Setup.exe"
+      "size": 13977580,
+      "digest": "sha256:51c2800ee9762cc53ce27ee3af4a9d9fe659d557f0e2501947b47ee0bc15ada3",
+      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.12.0/Elytra-Setup.exe"
     },
     {
       "name": "Elytra.exe",
-      "size": 14991232,
-      "digest": "sha256:5b45d10f02c6b0280ba842b7ed55c13c450f7bdd6f7616f13725bedfe42039d8",
-      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.11.0/Elytra.exe"
+      "size": 15011203,
+      "digest": "sha256:c2857f425b89ac06a51adfcba42f3bb28163cf1572556425b961088e350f06d2",
+      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.12.0/Elytra.exe"
     }
   ]
 }
