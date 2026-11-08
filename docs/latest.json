@@ -1,18 +1,18 @@
 {
-  "tag_name": "v0.10.12",
-  "body": "## Elytra 0.10.12\r\n\r\n- Обновление работает, даже когда GitHub недоступен: Elytra скачивает его через запасные зеркала и проверяет контрольную сумму файла\r\n- Понятная ошибка вместо «Нет связи с ?»\r\n- Исправлен запуск сборок на Fabric («Knot.createGameProvider»)\r\n",
+  "tag_name": "v0.10.13",
+  "body": "## Elytra 0.10.13\r\n\r\n- Новое: блок «Поддержать Elytra» в Настройках и список поддержавших\r\n- Обновление работает, даже когда GitHub недоступен\r\n",
   "assets": [
     {
       "name": "Elytra-Setup.exe",
-      "size": 13942229,
-      "digest": "sha256:dd81a5006f5decf6059dbb42b48b9c75030d338bfa4edc29d836db7b48d1eb8a",
-      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.10.12/Elytra-Setup.exe"
+      "size": 13949336,
+      "digest": "sha256:5603bfd08a13cab30451fa92ec97ec28a355173f32651d2f458fa8bc1b4edcf3",
+      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.10.13/Elytra-Setup.exe"
     },
     {
       "name": "Elytra.exe",
-      "size": 14975127,
-      "digest": "sha256:fa026421f448b9a5aec4e41f0cc10cdf25cd1b77e2fb5ca6d3f7f257d040120b",
-      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.10.12/Elytra.exe"
+      "size": 14976858,
+      "digest": "sha256:334fa4f733148ac7e8c217fa7c6dcc5f34568cb2bcf6741f418ae82742b9fc1c",
+      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.10.13/Elytra.exe"
     }
   ]
 }
