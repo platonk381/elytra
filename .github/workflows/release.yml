@@ -1,0 +1,61 @@
+# Builds Elytra.exe and Elytra-Setup.exe on GitHub's Windows machines and publishes a release
+# whenever VERSION in launcher.py is new. Every Elytra then offers the update by itself.
+name: Build & release
+
+on:
+  push:
+    branches: [main]
+    paths: ["launcher.py", "ui/**", "icon.ico", "installer.iss", ".github/workflows/release.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: v
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path launcher.py -Pattern '^VERSION = "(.+)"').Matches[0].Groups[1].Value
+          "version=$v" >> $env:GITHUB_OUTPUT
+          gh release view "v$v" *> $null
+          if ($LASTEXITCODE -eq 0) { "skip=true" >> $env:GITHUB_OUTPUT } else { "skip=false" >> $env:GITHUB_OUTPUT }
+          exit 0
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - uses: actions/setup-python@v5
+        if: steps.v.outputs.skip == 'false'
+        with:
+          python-version: "3.12"
+
+      - name: Build Elytra.exe
+        if: steps.v.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pywebview minecraft-launcher-lib requests pyinstaller
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name Elytra --icon icon.ico --add-data "ui;ui" --add-data "icon.ico;." launcher.py
+
+      - name: Build installer
+        if: steps.v.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVer=${{ steps.v.outputs.version }}" installer.iss
+
+      - name: Publish release
+        if: steps.v.outputs.skip == 'false'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v = "${{ steps.v.outputs.version }}"
+          $notes = if (Test-Path RELEASE_NOTES.md) { Get-Content RELEASE_NOTES.md -Raw } else { "Elytra $v" }
+          $notes += "`n`n**Elytra-Setup.exe** — installer with shortcuts (recommended). **Elytra.exe** — portable, no install."
+          gh release create "v$v" dist/Elytra-Setup.exe dist/Elytra.exe --title "Elytra $v" --notes "$notes"
