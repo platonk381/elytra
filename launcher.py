@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.4"
+VERSION = "0.10.5"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -2258,17 +2258,24 @@ def apply_self_update_job(task):
                          creationflags=0x00000008, close_fds=True)
         threading.Timer(1.0, lambda: window.destroy()).start()
         return "done.updating", {"version": _update_info["version"]}
-    bat = os.path.join(tempfile.gettempdir(), "elytra_update.bat")
-    with open(bat, "w", encoding="utf-8") as f:
-        f.write(f"""@echo off
-:wait
-tasklist /FI "PID eq {os.getpid()}" | find "{os.getpid()}" >nul && (timeout /t 1 /nobreak >nul & goto wait)
-move /y "{new}" "{exe}" >nul
-start "" "{exe}"
-del "%~f0"
-""")
-    subprocess.Popen(["cmd", "/c", bat], creationflags=0x08000000 | 0x00000008, close_fds=True)
-    threading.Timer(1.0, lambda: window.destroy()).start()
+    # Windows lets a running exe be renamed (not deleted). The one-file build runs as two processes
+    # (a small launcher plus Python) that keep the file locked a moment after closing, which is why
+    # replacing it from a script afterwards used to fail silently and leave the old version.
+    old = exe + ".old"
+    try:
+        if os.path.exists(old):
+            os.remove(old)
+    except OSError:
+        old = exe + f".{int(time.time())}.old"
+    os.replace(exe, old)
+    try:
+        os.replace(new, exe)
+    except OSError:
+        os.replace(old, exe)          # put the working version back
+        raise
+    log(f"self-update to {_update_info['version']}: swapped files, restarting")
+    subprocess.Popen([exe], creationflags=0x00000008 | 0x00000200, close_fds=True, cwd=os.path.dirname(exe))
+    threading.Timer(1.5, lambda: os._exit(0)).start()
     return "done.updating", {"version": _update_info["version"]}
 
 
@@ -4243,6 +4250,13 @@ if __name__ == "__main__":
     # Elytra already open? Hand the job over to it instead of starting a second copy.
     if handoff("play" if play_id else "show", play_id or ""):
         sys.exit(0)
+    if getattr(sys, "frozen", False):   # leftovers of a self-update
+        for fn in os.listdir(os.path.dirname(sys.executable)):
+            if fn.lower().startswith("elytra.exe.") and fn.lower().endswith(".old"):
+                try:
+                    os.remove(os.path.join(os.path.dirname(sys.executable), fn))
+                except OSError:
+                    pass
     patch_requests()
     log(f"Elytra {VERSION} start, python {sys.version.split()[0]}")
     probe_network()

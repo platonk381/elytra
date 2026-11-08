@@ -1,3 +1,2 @@
-- PyInstaller launcher is now really compiled from source in the release build (fewer antivirus false alarms)
-- Installer ships Elytra as a folder build; installed copies update themselves silently
-- Every Minecraft version in the create dialog: releases, snapshots, beta and alpha
+- Fixed: updating from inside Elytra restarted the old version (the file could not be replaced while the launcher was still closing)
+- No terminal window flashes during an update
