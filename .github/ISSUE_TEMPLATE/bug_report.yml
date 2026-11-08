@@ -1,0 +1,27 @@
+name: "🐞 Ошибка / Bug"
+description: "Что-то не работает в Elytra / Something is broken"
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо! Сначала загляни в [частые проблемы](https://platonk381.github.io/elytra/support.html) — может, решение уже есть.
+        Thanks! Check the [FAQ](https://platonk381.github.io/elytra/support.html) first.
+  - type: textarea
+    id: what
+    attributes:
+      label: "Что случилось? / What happened?"
+      description: "Что ты делал и что пошло не так / What you did and what went wrong"
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: "Отчёт Elytra / Elytra report"
+      description: "Настройки → «Сообщить о проблеме» копирует отчёт — вставь его сюда (Ctrl+V) / Settings → “Report a problem” copies it — paste here"
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: "Версия Elytra / Elytra version"
+      placeholder: "0.10.6"

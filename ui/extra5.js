@@ -14,12 +14,28 @@ function netPanel() {
     <div class="seg" style="grid-template-columns:repeat(3,1fr)">${["auto", "official", "mirror"].map(k => `<button class="${src === k ? "on" : ""}" style="text-transform:none" onclick="setNetSrc('${k}')">${T("net.m_" + k)}</button>`).join("")}</div></div>
     <div class="netgrid" id="netGrid">${netRows()}</div>
     <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn" onclick="recheckNet()">${ico("refresh")}${T("net.recheck")}</button>
-      <button class="btn ghost" onclick="call('open_app_log')">${ico("file")}${T("net.log")}</button></div>
+      <button class="btn ghost" onclick="call('open_app_log')">${ico("file")}${T("net.log")}</button>
+      <button class="btn ghost" onclick="reportProblem()">${ico("info")}${T("sup.btn")}</button>
+      <button class="btn ghost" onclick="call('open_url','https://platonk381.github.io/elytra/support.html')">${ico("globe")}${T("sup.site")}</button></div>
+    <p style="font-size:12px;color:var(--muted);margin:10px 0 0">${T("sup.sub")}</p>
     <p style="font-size:12px;color:var(--muted);margin:12px 0 0">${T("net.credit")}</p></div>`;
 }
 function drawNet() { const g = $("#netGrid"); if (g) g.innerHTML = netRows(); }
 async function setNetSrc(k) { await saveSettingsObj({netsrc: k}); render(); recheckNet(); }
 async function recheckNet() { S.net = {}; drawNet(); await call("recheck_network"); }
+
+/* Support: copy a diagnostic report and open the GitHub form */
+async function reportProblem() {
+  const r = await call("support_report");
+  if (!r) return;
+  let ok = r.copied;
+  if (!ok) { try { await navigator.clipboard.writeText(r.text); ok = true; } catch (e) {} }
+  if (ok) return toast(t("sup.copied"), "ok");
+  toast(t("sup.manual"), "error");
+  const pre = document.createElement("textarea"); pre.value = r.text; pre.readOnly = true;
+  pre.style.cssText = "width:100%;height:220px;margin-top:12px;font:12px monospace;background:var(--card);color:inherit;border:1px solid var(--line);border-radius:10px;padding:10px";
+  const g = $("#netGrid"); if (g) { g.parentNode.appendChild(pre); pre.select(); }
+}
 
 /* Discord switch: saves at once and tells whether Discord accepted the status */
 async function toggleDiscord(el) {

@@ -746,7 +746,12 @@ const I18N = {
   "vk.old_beta": "Beta",
   "vk.old_alpha": "Alpha",
   "vk.old_note": "The very first versions of Minecraft: vanilla only, no mods. Sounds may be missing — that's how they were.",
-  "vk.snap_note": "Test builds: things can break, back up your worlds."
+  "vk.snap_note": "Test builds: things can break, back up your worlds.",
+  "sup.btn": "Report a problem",
+  "sup.sub": "Copies a short report (version, system, error log — no passwords) and opens a form on GitHub. Paste it there with Ctrl+V.",
+  "sup.copied": "Report copied — paste it into the form (Ctrl+V)",
+  "sup.manual": "Couldn't copy automatically — the report is shown below",
+  "sup.site": "Help & FAQ"
  },
  "ru": {
   "u.gb": "ГБ",
@@ -1494,7 +1499,12 @@ const I18N = {
   "vk.old_beta": "Бета",
   "vk.old_alpha": "Альфа",
   "vk.old_note": "Самые первые версии Minecraft: только ваниль, без модов. Звуков может не быть — так и было.",
-  "vk.snap_note": "Тестовые сборки: что-то может ломаться, делай бэкапы миров."
+  "vk.snap_note": "Тестовые сборки: что-то может ломаться, делай бэкапы миров.",
+  "sup.btn": "Сообщить о проблеме",
+  "sup.sub": "Скопирует короткий отчёт (версия, система, лог ошибок — без паролей) и откроет форму на GitHub. Вставь его туда через Ctrl+V.",
+  "sup.copied": "Отчёт скопирован — вставь его в форму (Ctrl+V)",
+  "sup.manual": "Не удалось скопировать — отчёт показан ниже",
+  "sup.site": "Помощь и частые вопросы"
  },
  "uk": {
   "u.gb": "ГБ",
@@ -2242,7 +2252,12 @@ const I18N = {
   "vk.old_beta": "Бета",
   "vk.old_alpha": "Альфа",
   "vk.old_note": "Найперші версії Minecraft: лише ваніль, без модів. Звуків може не бути — так і було.",
-  "vk.snap_note": "Тестові збірки: щось може ламатися, роби бекапи світів."
+  "vk.snap_note": "Тестові збірки: щось може ламатися, роби бекапи світів.",
+  "sup.btn": "Повідомити про проблему",
+  "sup.sub": "Скопіює короткий звіт (версія, система, лог помилок — без паролів) і відкриє форму на GitHub. Встав його туди через Ctrl+V.",
+  "sup.copied": "Звіт скопійовано — встав його у форму (Ctrl+V)",
+  "sup.manual": "Не вдалося скопіювати — звіт показано нижче",
+  "sup.site": "Допомога і часті питання"
  },
  "de": {
   "u.gb": "GB",
@@ -2990,7 +3005,12 @@ const I18N = {
   "vk.old_beta": "Beta",
   "vk.old_alpha": "Alpha",
   "vk.old_note": "Die allerersten Minecraft-Versionen: nur Vanilla, keine Mods. Sounds können fehlen — so war es damals.",
-  "vk.snap_note": "Testversionen: Dinge können kaputtgehen, sichere deine Welten."
+  "vk.snap_note": "Testversionen: Dinge können kaputtgehen, sichere deine Welten.",
+  "sup.btn": "Problem melden",
+  "sup.sub": "Kopiert einen kurzen Bericht (Version, System, Fehlerlog — keine Passwörter) und öffnet ein Formular auf GitHub. Dort mit Strg+V einfügen.",
+  "sup.copied": "Bericht kopiert — füge ihn ins Formular ein (Strg+V)",
+  "sup.manual": "Automatisches Kopieren fehlgeschlagen — der Bericht steht unten",
+  "sup.site": "Hilfe & FAQ"
  },
  "es": {
   "u.gb": "GB",
@@ -3738,6 +3758,11 @@ const I18N = {
   "vk.old_beta": "Beta",
   "vk.old_alpha": "Alfa",
   "vk.old_note": "Las primeras versiones de Minecraft: solo vanilla, sin mods. Puede que falten sonidos: así eran.",
-  "vk.snap_note": "Versiones de prueba: algo puede fallar, haz copias de tus mundos."
+  "vk.snap_note": "Versiones de prueba: algo puede fallar, haz copias de tus mundos.",
+  "sup.btn": "Informar de un problema",
+  "sup.sub": "Copia un breve informe (versión, sistema, registro de errores, sin contraseñas) y abre un formulario en GitHub. Pégalo allí con Ctrl+V.",
+  "sup.copied": "Informe copiado: pégalo en el formulario (Ctrl+V)",
+  "sup.manual": "No se pudo copiar: el informe aparece abajo",
+  "sup.site": "Ayuda y preguntas frecuentes"
  }
 };

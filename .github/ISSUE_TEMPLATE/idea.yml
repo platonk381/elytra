@@ -1,0 +1,11 @@
+name: "💡 Идея / Idea"
+description: "Предложи, что добавить в Elytra / Suggest a feature"
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: "Идея / Idea"
+      description: "Что добавить и зачем / What and why"
+    validations:
+      required: true

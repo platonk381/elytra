@@ -1,2 +1,5 @@
-- Fixed: updating from inside Elytra restarted the old version (the file could not be replaced while the launcher was still closing)
-- No terminal window flashes during an update
+## Elytra 0.10.6
+
+- Новое: кнопка «Сообщить о проблеме» в Настройках → Источники загрузки и в Ctrl+K. Она копирует отчёт (версия, система, лог, без паролей) и открывает форму на GitHub
+- Новое: ссылка «Помощь и частые вопросы» ведёт на страницу поддержки на сайте
+- Сайт: крупнее, добавлены блок «Что нового» и страница техподдержки с поиском по проблемам

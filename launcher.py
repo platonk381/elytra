@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.5"
+VERSION = "0.10.6"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -563,6 +563,45 @@ def log(text):
                 f.write(time.strftime("%Y-%m-%d %H:%M:%S ") + text.rstrip() + "\n")
     except Exception:
         pass
+
+
+def mask_home(s):
+    home = os.path.expanduser("~")
+    s = s.replace(home, "~") if home and len(home) > 3 else s
+    return re.sub(r"(?i)(\\Users\\|/home/)[^\\/\s]+", r"\1<user>", s)
+
+
+def build_report(lines=60):
+    out = [f"Elytra {VERSION}", f"OS: {_platform.platform()} ({ARCH})",
+           f"Installed: {'yes' if is_installed() else 'portable'}",
+           "Net: " + ", ".join(f"{g}={v or '?'}" for g, v in net_status().items())]
+    try:
+        st = data.get("settings", {})
+        out.append(f"Settings: netsrc={st.get('netsrc', 'auto')} ram={st.get('ram', '?')} java={'custom' if st.get('java') else 'auto'}")
+        insts = list(data.get("instances", {}).values())
+        out.append(f"Instances: {len(insts)}")
+        for i in insts[:12]:
+            out.append(f"  - {i.get('mc', '?')} {i.get('loader', '?')} mods={len(i.get('content', {}).get('mod', []) if isinstance(i.get('content'), dict) else i.get('mods', []) or [])} state={i.get('state', 'ok')}")
+    except Exception as e:
+        out.append(f"(instances: {type(e).__name__})")
+    out.append("--- log ---")
+    try:
+        with open(os.path.join(BASE, "elytra.log"), encoding="utf-8", errors="replace") as f:
+            out += [l.rstrip() for l in f.readlines()[-lines:]]
+    except OSError:
+        out.append("(no log)")
+    return mask_home("\n".join(out))
+
+
+def copy_text(text):
+    try:
+        if os.name == "nt":
+            subprocess.run(["clip"], input=text.encode("utf-16-le"), check=True,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0), timeout=5)
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def file_hashes(path):
@@ -3730,6 +3769,17 @@ class Api:
         if not os.path.exists(path):
             log("log opened")
         os.startfile(path) if os.name == "nt" else subprocess.Popen(["xdg-open", path])
+
+    @endpoint
+    def support_report(self, note=""):
+        """Collect a short diagnostic report, copy it, open a prefilled GitHub issue."""
+        text = build_report()
+        copied = copy_text(text)
+        q = {"template": "bug_report.yml", "version": VERSION}
+        if note:
+            q["title"] = str(note)[:120]
+        webbrowser.open(f"https://github.com/{UPDATE_REPO}/issues/new?" + urllib.parse.urlencode(q))
+        return {"copied": copied, "text": text}
 
     @endpoint
     def recheck_network(self):

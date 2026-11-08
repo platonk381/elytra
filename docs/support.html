@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Техподдержка — Elytra</title>
+<meta name="description" content="Решения частых проблем Elytra и связь с поддержкой.">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="index.html"><img src="img/logo.png" alt="">Elytra</a>
+  <div class="links"><a href="index.html#features" data-t="n_feat">Возможности</a><a href="index.html#news" data-t="n_news">Что нового</a><a href="support.html" style="color:#fff" data-t="n_support">Поддержка</a>
+    <a href="https://github.com/platonk381/elytra">GitHub</a></div>
+  <div class="sp"></div>
+  <div class="lang"><button data-l="ru" class="on">RU</button><button data-l="en">EN</button></div>
+  <a class="btn main sm" href="https://github.com/platonk381/elytra/releases/latest/download/Elytra-Setup.exe" data-t="dl_short">Скачать</a>
+</div></nav>
+
+<header class="shero">
+  <div class="glow" style="width:600px;height:600px;left:-200px;top:-260px;background:rgba(34,211,238,.25)"></div>
+  <div class="glow" style="width:600px;height:600px;right:-220px;top:-120px;background:rgba(139,92,246,.35)"></div>
+  <div class="wrap" style="position:relative;z-index:2">
+    <div class="pill" data-t="pill">Обычно ответ — в течение дня</div>
+    <h1><span data-t="h1">Техподдержка</span> <span class="grad">Elytra</span></h1>
+    <p class="lead" data-t="lead">Большинство проблем решается за минуту. Найди свою ниже — или отправь отчёт прямо из лаунчера.</p>
+    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="q" placeholder="Например: вылетает, антивирус, Modrinth…" data-tp="ph"></div>
+    <div class="cats" id="cats">
+      <button class="cat on" data-c="all" data-t="c_all">Все</button><button class="cat" data-c="start" data-t="c_start">Запуск</button>
+      <button class="cat" data-c="net" data-t="c_net">Загрузка и сеть</button><button class="cat" data-c="game" data-t="c_game">Игра</button>
+      <button class="cat" data-c="mods" data-t="c_mods">Моды и сборки</button><button class="cat" data-c="acc" data-t="c_acc">Аккаунт и скин</button>
+    </div>
+  </div>
+</header>
+
+<section style="padding-top:20px"><div class="wrap">
+  <div class="issues" id="issues">
+    <details data-c="start"><summary><span><span class="tag" data-t="t_start">Запуск</span><span data-t="q1">Windows пишет «Система Windows защитила ваш компьютер»</span></span></summary>
+      <div data-t="a1"><ol><li>Нажми «Подробнее».</li><li>Нажми «Выполнить в любом случае».</li></ol><p>Так Windows встречает любую программу без платной цифровой подписи. Код Elytra открыт на GitHub.</p></div></details>
+    <details data-c="start"><summary><span><span class="tag" data-t="t_start">Запуск</span><span data-t="q2">Антивирус удаляет Elytra или пишет «троян»</span></span></summary>
+      <div data-t="a2"><p>Это ложное срабатывание: так антивирусы реагируют на программы на Python, упакованные PyInstaller.</p><ul><li>Скачивай Elytra только с этого сайта или со страницы GitHub.</li><li>Добавь папку <code>%LOCALAPPDATA%\Programs\Elytra</code> в исключения антивируса.</li><li>Для Microsoft Defender можно отправить файл как ложное срабатывание на microsoft.com/wdsi/filesubmission.</li></ul></div></details>
+    <details data-c="start"><summary><span><span class="tag" data-t="t_start">Запуск</span><span data-t="q3">Elytra не открывается или открывается пустое окно</span></span></summary>
+      <div data-t="a3"><ol><li>Открой Диспетчер задач (Ctrl+Shift+Esc) и сними задачу у всех «Elytra».</li><li>Запусти Elytra снова.</li><li>Если окно пустое — обнови Microsoft Edge WebView2 (обычно стоит в Windows 10/11, скачивается с сайта Microsoft).</li><li>Не помогло — переустанови Elytra через Elytra-Setup.exe: сборки и миры сохранятся.</li></ol></div></details>
+    <details data-c="net"><summary><span><span class="tag" data-t="t_net">Сеть</span><span data-t="q4">Не открывается каталог модов (Modrinth)</span></span></summary>
+      <div data-t="a4"><ol><li>Открой Настройки → Источники загрузки и подожди 10 секунд проверки.</li><li>Если Modrinth «недоступен» — выбери «Только зеркала».</li><li>Проверь интернет и VPN: в логе это видно как «Нет связи с …».</li></ol></div></details>
+    <details data-c="net"><summary><span><span class="tag" data-t="t_net">Сеть</span><span data-t="q5">Сборка качается очень долго</span></span></summary>
+      <div data-t="a5"><ul><li>Первая установка новой версии Minecraft скачивает несколько сотен мегабайт — это нормально. Следующие сборки на той же версии создаются почти мгновенно.</li><li>Forge и NeoForge всегда ставятся дольше: после скачивания запускается их собственный установщик.</li><li>Пока ждёшь — нажми «Поиграть, пока ждём» в уведомлении.</li></ul></div></details>
+    <details data-c="game"><summary><span><span class="tag" data-t="t_game">Игра</span><span data-t="q6">Игра вылетает при запуске</span></span></summary>
+      <div data-t="a6"><ol><li>Открой сборку → «Ещё» → «Доктор»: он найдёт конфликтующие моды и нехватку памяти.</li><li>Нажми «Починить» — Elytra перепроверит все файлы игры.</li><li>Попробуй отключить недавно добавленные моды.</li><li>Не помогло — отправь отчёт (см. ниже), приложи лог.</li></ol></div></details>
+    <details data-c="game"><summary><span><span class="tag" data-t="t_game">Игра</span><span data-t="q7">«Java не найдена»</span></span></summary>
+      <div data-t="a7"><p>Нажми «Починить» у сборки — Elytra сама скачает нужную Java. Если в Настройках указан свой путь к Java, очисти поле.</p></div></details>
+    <details data-c="game"><summary><span><span class="tag" data-t="t_game">Игра</span><span data-t="q8">Мало FPS, лагает</span></span></summary>
+      <div data-t="a8"><ul><li>Открой сборку и нажми «Ускорить» — поставятся моды оптимизации.</li><li>В Настройках сборки дай игре больше памяти (обычно 4–6 ГБ хватает).</li><li>Шейдеры сильно нагружают видеокарту — попробуй без них.</li></ul></div></details>
+    <details data-c="mods"><summary><span><span class="tag" data-t="t_mods">Моды</span><span data-t="q9">Как перенести сборки из другого лаунчера?</span></span></summary>
+      <div data-t="a9"><p>Библиотека → «Перенести из другого лаунчера». Elytra сама найдёт сборки Modrinth App, CurseForge, Prism, MultiMC, TLauncher и официального лаунчера.</p></div></details>
+    <details data-c="mods"><summary><span><span class="tag" data-t="t_mods">Моды</span><span data-t="q10">Сборка «Сломана» и не запускается</span></span></summary>
+      <div data-t="a10"><p>Так бывает, если закрыть Elytra во время установки. Нажми «Починить» — установка продолжится. Сборку также можно удалить.</p></div></details>
+    <details data-c="acc"><summary><span><span class="tag" data-t="t_acc">Аккаунт</span><span data-t="q11">Не отображается скин</span></span></summary>
+      <div data-t="a11"><p>Скин берётся по нику с серверов Mojang. Если ник не привязан к лицензии — показывается стандартный скин. Проверь ник в Настройках.</p></div></details>
+    <details data-c="acc"><summary><span><span class="tag" data-t="t_acc">Аккаунт</span><span data-t="q12">Как обновить Elytra?</span></span></summary>
+      <div data-t="a12"><p>Elytra сама покажет баннер «Доступна новая версия» — нажми «Обновить». Если что-то пошло не так, скачай Elytra-Setup.exe с этого сайта и запусти поверх.</p></div></details>
+  </div>
+  <p class="nores" id="nores" data-t="nores">Ничего не нашлось — отправь отчёт, разберёмся.</p>
+
+  <div class="center reveal" style="margin-top:100px"><div class="kick" data-t="k_rep">Отчёт о проблеме</div><h2 data-t="h_rep">Отправь отчёт за 30 секунд</h2>
+    <p class="sub" data-t="p_rep">Отчёт сам соберёт версию, сведения о системе и лог ошибок — личных данных и паролей в нём нет.</p></div>
+  <div class="steps2" data-t="rep_steps">
+    <div>В Elytra открой <b>Настройки</b> и нажми <b>«Сообщить о проблеме»</b> (или Ctrl+K → «Сообщить о проблеме»).</div>
+    <div>Отчёт скопируется, и откроется форма на GitHub — коротко опиши, что случилось.</div>
+    <div>Вставь отчёт в поле «Отчёт Elytra» (Ctrl+V) и нажми <b>Submit</b>.</div>
+  </div>
+
+  <div class="contact">
+    <div class="ccard"><div class="e">🐞</div><h3 data-t="cc1">Сообщить об ошибке</h3><p data-t="cc1d">Форма на GitHub: нужен бесплатный аккаунт. Видно, когда ошибку исправят.</p>
+      <a class="btn main sm" href="https://github.com/platonk381/elytra/issues/new?template=bug_report.yml" data-t="cc1b">Открыть форму</a></div>
+    <div class="ccard"><div class="e">💡</div><h3 data-t="cc2">Предложить идею</h3><p data-t="cc2d">Чего не хватает в Elytra? Лучшие идеи попадают в следующие версии.</p>
+      <a class="btn ghost sm" href="https://github.com/platonk381/elytra/issues/new?template=idea.yml" data-t="cc2b">Предложить</a></div>
+    <div class="ccard"><div class="e">📋</div><h3 data-t="cc3">Все обращения</h3><p data-t="cc3d">Посмотри, может, с твоей проблемой уже кто-то сталкивался.</p>
+      <a class="btn ghost sm" href="https://github.com/platonk381/elytra/issues" data-t="cc3b">Смотреть</a></div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div class="brand" style="font-size:17px"><img src="img/logo.png" alt="" style="width:28px;height:28px;border-radius:8px">Elytra</div>
+  <div data-t="disc">Не связано с Mojang и Microsoft. Minecraft — товарный знак Mojang AB.</div>
+  <div class="fl"><a href="index.html" data-t="home">Главная</a><a href="https://github.com/platonk381/elytra">GitHub</a></div>
+</div></footer>
+
+<script>
+const EN = {
+  n_feat:"Features", n_news:"What's new", n_support:"Support", dl_short:"Download", pill:"We usually reply within a day", h1:"Support",
+  lead:"Most problems take a minute to fix. Find yours below — or send a report straight from the launcher.", ph:"For example: crashes, antivirus, Modrinth…",
+  c_all:"All", c_start:"Launching", c_net:"Downloads & network", c_game:"Game", c_mods:"Mods & instances", c_acc:"Account & skin",
+  t_start:"Launch", t_net:"Network", t_game:"Game", t_mods:"Mods", t_acc:"Account",
+  q1:"Windows says “Windows protected your PC”", a1:"<ol><li>Click “More info”.</li><li>Click “Run anyway”.</li></ol><p>Windows shows this for any program without a paid code-signing certificate. Elytra's code is open on GitHub.</p>",
+  q2:"My antivirus deletes Elytra or calls it a trojan", a2:"<p>It's a false positive: antivirus heuristics often flag Python programs packed with PyInstaller.</p><ul><li>Only download Elytra from this site or its GitHub page.</li><li>Add <code>%LOCALAPPDATA%\\Programs\\Elytra</code> to your antivirus exclusions.</li><li>For Microsoft Defender you can submit the file as a false positive at microsoft.com/wdsi/filesubmission.</li></ul>",
+  q3:"Elytra doesn't open or shows a blank window", a3:"<ol><li>Open Task Manager (Ctrl+Shift+Esc) and end every “Elytra” task.</li><li>Start Elytra again.</li><li>Blank window — update Microsoft Edge WebView2 (normally built into Windows 10/11).</li><li>Still nothing — reinstall with Elytra-Setup.exe: your instances and worlds are kept.</li></ol>",
+  q4:"The mod catalog (Modrinth) won't open", a4:"<ol><li>Open Settings → Download sources and wait 10 seconds for the check.</li><li>If Modrinth is “unreachable”, choose “Mirrors only”.</li><li>Check your internet and VPN: the log shows it as “No connection to …”.</li></ol>",
+  q5:"An instance takes very long to download", a5:"<ul><li>The first install of a new Minecraft version downloads a few hundred megabytes — that's normal. Later instances on the same version are created almost instantly.</li><li>Forge and NeoForge always take longer: their own installer runs after the download.</li><li>While you wait — press “Play while you wait” in the notification.</li></ul>",
+  q6:"The game crashes on launch", a6:"<ol><li>Open the instance → “More” → “Doctor”: it finds conflicting mods and low memory.</li><li>Press “Repair” — Elytra re-checks every game file.</li><li>Try disabling recently added mods.</li><li>Still crashing — send a report (see below) with the log.</li></ol>",
+  q7:"“Java not found”", a7:"<p>Press “Repair” on the instance — Elytra downloads the right Java itself. If you set a custom Java path in Settings, clear it.</p>",
+  q8:"Low FPS, lag", a8:"<ul><li>Open the instance and press “Boost” to install performance mods.</li><li>Give the game more memory in the instance settings (4–6 GB is usually enough).</li><li>Shaders are heavy on the GPU — try without them.</li></ul>",
+  q9:"How do I move instances from another launcher?", a9:"<p>Library → “Move from another launcher”. Elytra finds instances from Modrinth App, CurseForge, Prism, MultiMC, TLauncher and the official launcher.</p>",
+  q10:"An instance is “Broken” and won't start", a10:"<p>This happens if Elytra was closed during an install. Press “Repair” to finish it, or delete the instance.</p>",
+  q11:"My skin doesn't show", a11:"<p>The skin is fetched by nickname from Mojang's servers. If the nickname isn't a licensed account, the default skin is shown. Check your nickname in Settings.</p>",
+  q12:"How do I update Elytra?", a12:"<p>Elytra shows a “New version available” banner — press “Update”. If something goes wrong, download Elytra-Setup.exe from this site and run it over the old one.</p>",
+  nores:"Nothing found — send a report and we'll sort it out.", k_rep:"Problem report", h_rep:"Send a report in 30 seconds",
+  p_rep:"The report collects the version, system info and the error log — no personal data or passwords.",
+  rep_steps:"<div>In Elytra open <b>Settings</b> and press <b>“Report a problem”</b> (or Ctrl+K → “Report a problem”).</div><div>The report is copied and a GitHub form opens — briefly describe what happened.</div><div>Paste the report into the “Elytra report” field (Ctrl+V) and press <b>Submit</b>.</div>",
+  cc1:"Report a bug", cc1d:"A GitHub form: needs a free account. You'll see when it's fixed.", cc1b:"Open the form",
+  cc2:"Suggest an idea", cc2d:"What's missing in Elytra? The best ideas make it into the next versions.", cc2b:"Suggest",
+  cc3:"All reports", cc3d:"See whether someone already ran into your problem.", cc3b:"Browse",
+  disc:"Not affiliated with Mojang or Microsoft. Minecraft is a trademark of Mojang AB.", home:"Home"
+};
+const RU = {}, RUP = {};
+document.querySelectorAll("[data-t]").forEach(el => RU[el.dataset.t] = el.innerHTML);
+document.querySelectorAll("[data-tp]").forEach(el => RUP[el.dataset.tp] = el.placeholder);
+function setLang(l) {
+  const d = l === "en" ? EN : RU;
+  document.querySelectorAll("[data-t]").forEach(el => { if (d[el.dataset.t]) el.innerHTML = d[el.dataset.t]; });
+  document.querySelectorAll("[data-tp]").forEach(el => el.placeholder = l === "en" ? EN[el.dataset.tp] : RUP[el.dataset.tp]);
+  document.querySelectorAll(".lang button").forEach(b => b.classList.toggle("on", b.dataset.l === l));
+  document.documentElement.lang = l; document.title = l === "en" ? "Support — Elytra" : "Техподдержка — Elytra";
+  try { localStorage.setItem("elytra-lang", l); } catch (e) {}
+  filter();
+}
+let cat = "all";
+function filter() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll("#issues details").forEach(d => {
+    const ok = (cat === "all" || d.dataset.c === cat) && (!q || d.textContent.toLowerCase().includes(q));
+    d.style.display = ok ? "" : "none"; if (ok) shown++;
+    if (q && ok) d.open = true;
+  });
+  document.getElementById("nores").style.display = shown ? "none" : "block";
+}
+document.getElementById("q").addEventListener("input", filter);
+document.querySelectorAll(".cat").forEach(b => b.onclick = () => { cat = b.dataset.c; document.querySelectorAll(".cat").forEach(x => x.classList.toggle("on", x === b)); filter(); });
+document.querySelectorAll(".lang button").forEach(b => b.onclick = () => setLang(b.dataset.l));
+let start = "ru";
+try { start = localStorage.getItem("elytra-lang") || (navigator.language || "ru").slice(0, 2); } catch (e) {}
+if (start === "en" || !["ru", "uk", "be", "kk"].includes(start)) setLang("en");
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12});
+document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+</script>
+</body>
+</html>
