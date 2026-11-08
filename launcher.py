@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.8"
+VERSION = "0.10.9"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -809,6 +809,30 @@ def copy_text(text):
     except Exception:
         pass
     return False
+
+
+def harden_webview():
+    """pywebview adds the WebView2 loader folders of every CPU type to PATH and stops with
+    'Cannot find win-arm64' if one is missing (e.g. after an interrupted update). Only the
+    folder for our own CPU matters, so skip the others instead of crashing."""
+    try:
+        import webview.util as wu
+        orig = wu.interop_dll_path
+        if getattr(orig, "_elytra", False):
+            return
+
+        def safe(name):
+            try:
+                return orig(name)
+            except FileNotFoundError:
+                if str(name).startswith("win-"):
+                    log(f"webview runtime {name} missing, skipped")
+                    return tempfile.gettempdir()
+                raise
+        safe._elytra = True
+        wu.interop_dll_path = safe
+    except Exception as e:
+        log(f"harden_webview: {type(e).__name__}: {e}")
 
 
 def file_hashes(path):
@@ -2499,10 +2523,15 @@ def apply_self_update_job(task):
     if is_installed():
         setup = os.path.join(tempfile.gettempdir(), f"Elytra-Setup-{_update_info['version']}.exe")
         os.replace(new, setup)
-        # the installer waits for Elytra to close (CloseApplications), updates the folder and starts Elytra again
-        subprocess.Popen([setup, "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/RELAUNCH=1"],
-                         creationflags=0x00000008, close_fds=True)
-        threading.Timer(1.0, lambda: window.destroy()).start()
+        # Start the installer only after this process has fully exited: if it runs while Elytra still holds
+        # its files, it deletes what it can, fails on the locked rest and leaves a broken install.
+        q = setup.replace("'", "''")
+        ps = (f"Wait-Process -Id {os.getpid()} -Timeout 90 -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 800; "
+              f"Start-Process -FilePath '{q}' -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CLOSEAPPLICATIONS'")
+        subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-Command", ps],
+                         creationflags=0x08000000 | 0x00000200, close_fds=True)
+        threading.Timer(0.6, lambda: window.destroy()).start()
+        threading.Timer(8.0, lambda: os._exit(0)).start()
         return "done.updating", {"version": _update_info["version"]}
     # Windows lets a running exe be renamed (not deleted). The one-file build runs as two processes
     # (a small launcher plus Python) that keep the file locked a moment after closing, which is why
@@ -4549,6 +4578,7 @@ if __name__ == "__main__":
                 except OSError:
                     pass
     patch_requests()
+    harden_webview()
     log(f"Elytra {VERSION} start, python {sys.version.split()[0]}")
     probe_network()
     threading.Thread(target=support_poller, daemon=True).start()
