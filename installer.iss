@@ -1,7 +1,7 @@
 ; Elytra — Windows installer (Inno Setup 6). Built automatically by GitHub Actions (.github/workflows/release.yml);
 ; locally install.bat builds it too if Inno Setup is installed.
 #ifndef AppVer
-  #define AppVer "0.10.10"
+  #define AppVer "0.10.11"
 #endif
 
 [Setup]

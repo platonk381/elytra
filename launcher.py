@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.10"
+VERSION = "0.10.11"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -1088,10 +1088,34 @@ def install_fabric_like(kind, mc, lv, task, full=False):
     failed = parallel_download(task, lib_jobs(prof.get("libraries", []), repo))
     if full or not complete or failed:
         mll.install.install_minecraft_version(vid, BASE, callback=task.cb)
+    ensure_version_jar(vid)
     return vid, lv
 
 
 # ---------------- game installation ----------------
+def ensure_version_jar(vid):
+    """A loader version (Fabric/Quilt/Forge) is launched with versions/<id>/<id>.jar, a copy of the vanilla
+    game jar. Without it Fabric stops with 'Knot.createGameProvider' (it can't find Minecraft)."""
+    try:
+        vdir = os.path.join(BASE, "versions", vid)
+        with open(os.path.join(vdir, f"{vid}.json"), encoding="utf-8") as f:
+            vj = json.load(f)
+        parent = vj.get("inheritsFrom")
+        if not parent or vj.get("jar"):
+            return
+        own, src = os.path.join(vdir, f"{vid}.jar"), os.path.join(BASE, "versions", parent, f"{parent}.jar")
+        if not os.path.isfile(src):
+            return
+        if os.path.isfile(own) and os.path.getsize(own) == os.path.getsize(src):
+            return
+        tmp = own + ".tmp"
+        shutil.copyfile(src, tmp)
+        os.replace(tmp, own)
+        log(f"restored game jar for {vid}")
+    except Exception as e:
+        log(f"ensure_version_jar {vid}: {type(e).__name__}: {e}")
+
+
 _skip_tl = threading.local()
 
 
@@ -3784,6 +3808,7 @@ def launch(iid, server):
             opts["executablePath"] = o.get("java") or s["java"]
         if o.get("width") and o.get("height"):
             opts.update(customResolution=True, resolutionWidth=str(o["width"]), resolutionHeight=str(o["height"]))
+        ensure_version_jar(inst["version_id"])
         cmd = mll.command.get_minecraft_command(inst["version_id"], BASE, opts)
         if o.get("fullscreen"):
             cmd.append("--fullscreen")
