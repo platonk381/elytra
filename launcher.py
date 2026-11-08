@@ -2,7 +2,7 @@
 Logic in Python, interface in ui/ (pywebview).
 Errors and statuses are sent to the UI as translation keys (see ui/i18n.js).
 """
-import os, sys, json, re, time, uuid, gzip, base64, shutil, socket, struct, random, secrets, hashlib, zipfile
+import os, sys, json, re, time, uuid, gzip, zlib, hmac, base64, shutil, socket, struct, random, secrets, hashlib, zipfile
 import webbrowser, tempfile, io, shlex, copy, atexit
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import threading, functools, subprocess
@@ -593,64 +593,191 @@ def build_report(lines=60):
     return mask_home("\n".join(out))
 
 
-# ---------------- support chat (Cloudflare Worker + Telegram bot, see support/worker.js) ----------------
+# ---------------- support chat ----------------
+# Messages go through ntfy.sh (no account needed). What a player writes is encrypted for the developer's
+# key (X25519 + HMAC-SHA256), so only the developer's inbox page (docs/inbox.html) can read it.
+# Replies come back on the player's own secret topic "elytra-r-<tid>".
 SUPPORT_CFG = f"https://{UPDATE_REPO.split('/')[0]}.github.io/{UPDATE_REPO.split('/')[1]}/support.json"
-_support = {"url": None, "checked": 0}
+_support = {"cfg": None, "checked": 0}
+
+P25519 = 2 ** 255 - 19
 
 
-def support_url():
-    """Address of the support worker; read from the website so it can change without a release."""
-    if _support["url"] is not None and time.time() - _support["checked"] < 3600:
-        return _support["url"]
-    url = ""
+def _x25519(k, u):
+    P = P25519
+    k = bytearray(k); k[0] &= 248; k[31] &= 127; k[31] |= 64
+    k = int.from_bytes(k, "little"); u = int.from_bytes(u, "little") & ((1 << 255) - 1)
+    x1, x2, z2, x3, z3, sw = u, 1, 0, u, 1, 0
+    for t in range(254, -1, -1):
+        b = (k >> t) & 1
+        sw ^= b
+        if sw:
+            x2, x3, z2, z3 = x3, x2, z3, z2
+        sw = b
+        A = (x2 + z2) % P; AA = A * A % P; B = (x2 - z2) % P; BB = B * B % P; E = (AA - BB) % P
+        C = (x3 + z3) % P; D = (x3 - z3) % P; DA = D * A % P; CB = C * B % P
+        x3 = (DA + CB) ** 2 % P; z3 = x1 * (DA - CB) ** 2 % P; x2 = AA * BB % P; z2 = E * (AA + 121665 * E) % P
+    if sw:
+        x2, x3, z2, z3 = x3, x2, z3, z2
+    return (x2 * pow(z2, P - 2, P) % P).to_bytes(32, "little")
+
+
+def box_pub(priv):
+    return _x25519(priv, (9).to_bytes(32, "little"))
+
+
+def _box_keys(shared, epub, apub):
+    k = hashlib.sha256(b"elytra-box-1" + shared + epub + apub).digest()
+    return hmac.new(k, b"enc", hashlib.sha256).digest(), hmac.new(k, b"mac", hashlib.sha256).digest()
+
+
+def _box_stream(key, nonce, n):
+    out, i = bytearray(), 0
+    while len(out) < n:
+        out += hmac.new(key, nonce + i.to_bytes(4, "big"), hashlib.sha256).digest()
+        i += 1
+    return bytes(out[:n])
+
+
+def box_seal(obj, apub):
+    """Encrypt a JSON object for the developer's public key (same format as BOX.open in docs/inbox.html)."""
+    plain = zlib.compress(json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode(), 9)
+    eph = os.urandom(32)
+    epub = box_pub(eph)
+    ek, mk = _box_keys(_x25519(eph, apub), epub, apub)
+    nonce = os.urandom(16)
+    ct = bytes(a ^ b for a, b in zip(plain, _box_stream(ek, nonce, len(plain))))
+    tag = hmac.new(mk, nonce + ct, hashlib.sha256).digest()[:16]
+    return "E1." + base64.urlsafe_b64encode(epub + nonce + tag + ct).decode().rstrip("=")
+
+
+def box_open(s, apriv):
+    raw = base64.urlsafe_b64decode(s[3:] + "=" * (-len(s[3:]) % 4))
+    epub, nonce, tag, ct = raw[:32], raw[32:48], raw[48:64], raw[64:]
+    apub = box_pub(apriv)
+    ek, mk = _box_keys(_x25519(apriv, epub), epub, apub)
+    if not hmac.compare_digest(hmac.new(mk, nonce + ct, hashlib.sha256).digest()[:16], tag):
+        raise ValueError("bad tag")
+    return json.loads(zlib.decompress(bytes(a ^ b for a, b in zip(ct, _box_stream(ek, nonce, len(ct))))))
+
+
+def support_cfg():
+    """{ntfy, inbox, pub} from the website, so the developer can change it without a release."""
+    if _support["cfg"] is not None and time.time() - _support["checked"] < 3600:
+        return _support["cfg"]
+    cfg = {}
     try:
-        cfg = json.loads(open_url(SUPPORT_CFG, timeout=10, read=True).decode("utf-8"))
-        url = str(cfg.get("chat") or "").rstrip("/")
-        if not url.startswith("https://"):
-            url = ""
+        c = json.loads(open_url(SUPPORT_CFG, timeout=10, read=True).decode("utf-8"))
+        if str(c.get("ntfy", "")).startswith("https://") and re.fullmatch(r"[\w-]{8,64}", str(c.get("inbox", ""))) \
+                and re.fullmatch(r"[0-9a-f]{64}", str(c.get("pub", ""))):
+            cfg = {"ntfy": c["ntfy"].rstrip("/"), "inbox": c["inbox"], "pub": bytes.fromhex(c["pub"])}
     except Exception as e:
         log(f"support cfg: {type(e).__name__}: {e}")
-        if _support["url"]:
-            return _support["url"]
-    _support.update(url=url, checked=time.time())
-    return url
+        if _support["cfg"]:
+            return _support["cfg"]
+    _support.update(cfg=cfg, checked=time.time())
+    return cfg
 
 
 def support_state():
     with lock:
         s = data.setdefault("support", {})
         if not s.get("tid"):
-            s.update(tid=secrets.token_hex(16), key=secrets.token_hex(24), msgs=[], seen=0)
+            s.update(tid=secrets.token_hex(16), msgs=[], seen=0, since="all")
             save()
         return s
 
 
-def support_call(path, body=None, query=None):
-    base = support_url()
-    if not base:
-        raise LauncherError("sup.off")
-    url = base + path + ("?" + urllib.parse.urlencode(query) if query else "")
+def support_http(url, body=None, headers=None):
     try:
-        req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None,
-                                     headers={**UA, "Content-Type": "application/json"}, method="POST" if body is not None else "GET")
+        req = urllib.request.Request(url, data=body.encode("utf-8") if body is not None else None,
+                                     headers={**UA, **(headers or {})}, method="POST" if body is not None else "GET")
         with urllib.request.urlopen(req, timeout=20) as r:
-            return json.loads(r.read().decode("utf-8"))
+            return r.read().decode("utf-8", "replace")
     except urllib.error.HTTPError as e:
-        code = {429: "sup.rate", 503: "sup.off"}.get(e.code, "sup.fail")
-        raise LauncherError(code, err=f"HTTP {e.code}")
+        raise LauncherError("sup.rate" if e.code == 429 else "sup.fail", err=f"HTTP {e.code}")
     except (urllib.error.URLError, OSError, ValueError) as e:
         raise LauncherError("sup.fail", err=type(e).__name__)
 
 
-def support_merge(msgs):
-    """Store the server's copy of the chat; returns how many developer replies are new."""
+def support_publish(obj):
+    cfg = support_cfg()
+    if not cfg:
+        raise LauncherError("sup.off")
+    sealed = box_seal(obj, cfg["pub"])
+    support_http(f"{cfg['ntfy']}/{cfg['inbox']}", sealed, {"Title": "Elytra: new support message", "Tags": "speech_balloon"})
+    return sealed
+
+
+def support_fit(obj):
+    """ntfy keeps messages up to 4 KB: drop the oldest report lines until the sealed message fits."""
+    cfg = support_cfg()
+    while len(box_seal(obj, cfg["pub"])) > 3900:
+        rep = obj.get("rep", "")
+        if not rep:
+            raise LauncherError("sup.long")
+        lines = rep.split("\n")
+        obj["rep"] = "\n".join(lines[:6] + lines[6 + max(1, len(lines) // 5):]) if len(lines) > 8 else ""
+    return obj
+
+
+def support_poll():
+    """Fetch replies/acks from our topic, ack replies, resend our messages the developer hasn't seen. Returns new reply count."""
+    cfg = support_cfg()
+    if not cfg:
+        return 0
+    st = support_state()
+    raw = support_http(f"{cfg['ntfy']}/elytra-r-{st['tid']}/json?poll=1&since={st.get('since') or 'all'}")
+    new, ack_ids, last = 0, [], None
     with lock:
-        s = data.setdefault("support", {})
-        old = {(m.get("from"), m.get("ts"), m.get("text")) for m in s.get("msgs", [])}
-        new = [m for m in msgs if m.get("from") == "dev" and (m.get("from"), m.get("ts"), m.get("text")) not in old]
-        s["msgs"] = [{"from": m.get("from"), "text": str(m.get("text", ""))[:4000], "ts": int(m.get("ts") or 0)} for m in msgs][-200:]
+        have = {m.get("id") for m in st["msgs"]}
+        for line in raw.splitlines():
+            try:
+                ev = json.loads(line)
+            except ValueError:
+                continue
+            if ev.get("event") != "message":
+                continue
+            last = ev.get("id") or last
+            try:
+                m = json.loads(ev.get("message") or "{}")
+            except ValueError:
+                continue
+            if m.get("t") == "reply" and m.get("id") and m["id"] not in have:
+                st["msgs"].append({"id": str(m["id"])[:32], "from": "dev", "text": str(m.get("text", ""))[:4000], "ts": int(m.get("ts") or time.time())})
+                have.add(m["id"]); new += 1
+            if m.get("t") == "reply" and m.get("id"):
+                ack_ids.append(str(m["id"])[:32])
+            if m.get("t") == "ack":
+                for x in st["msgs"]:
+                    if x.get("from") == "me" and x.get("id") in (m.get("ids") or []):
+                        x["acked"] = True
+        if last:
+            st["since"] = last
+        st["msgs"].sort(key=lambda x: x.get("ts", 0))
+        st["msgs"] = st["msgs"][-200:]
         save()
-        return len(new)
+    if ack_ids:
+        try:
+            support_publish({"t": "ack", "tid": st["tid"], "ids": ack_ids[-50:]})
+        except LauncherError:
+            pass
+    now = time.time()
+    for x in list(st["msgs"]):     # the developer's inbox only keeps messages ~12 h: resend unseen ones
+        if x.get("from") == "me" and not x.get("acked") and now - x.get("sent_at", 0) > 5 * 3600 and now - x.get("ts", 0) < 4 * 86400:
+            try:
+                support_publish(support_fit({"t": "msg", "tid": st["tid"], "id": x["id"], "text": x["text"], "ts": x["ts"],
+                                             "name": x.get("name", ""), "ver": VERSION, "rep": x.get("rep", "")}))
+                with lock:
+                    x["sent_at"] = now
+                    save()
+            except LauncherError:
+                break
+    return new
+
+
+def support_public(st):
+    return [{k: m.get(k) for k in ("id", "from", "text", "ts", "acked")} for m in st.get("msgs", [])]
 
 
 def support_unread():
@@ -667,9 +794,8 @@ def support_poller():
             msgs = s.get("msgs") or []
             if not msgs or time.time() - max(m.get("ts", 0) for m in msgs) > 14 * 86400:
                 continue
-            r = support_call("/api/poll", query={"tid": s["tid"], "key": s["key"]})
-            if support_merge(r.get("msgs", [])):
-                emit("support", {"msgs": data["support"]["msgs"], "unread": support_unread(), "new": True})
+            if support_poll():
+                emit("support", {"msgs": support_public(data["support"]), "unread": support_unread(), "new": True})
         except Exception:
             pass
 
@@ -3865,34 +3991,36 @@ class Api:
     @endpoint
     def support_chat(self, poll=False):
         st = support_state()
-        enabled = bool(support_url())
+        enabled = bool(support_cfg())
         if enabled and poll and st.get("msgs"):
             try:
-                support_merge(support_call("/api/poll", query={"tid": st["tid"], "key": st["key"]}).get("msgs", []))
+                support_poll()
             except LauncherError:
                 pass
         with lock:
             st["seen"] = max([int(time.time())] + [m.get("ts", 0) for m in st.get("msgs", [])])
             save()
-        return {"enabled": enabled, "msgs": st.get("msgs", [])}
+        return {"enabled": enabled, "msgs": support_public(st)}
 
     @endpoint
     def support_send(self, text, report=False):
-        text = str(text or "").strip()[:2000]
+        text = str(text or "").strip()[:1500]
         if not text:
             raise LauncherError("sup.empty")
         st = support_state()
         acc = next((a for a in data["accounts"] if a["id"] == data["settings"].get("account")), None)
-        body = {"tid": st["tid"], "key": st["key"], "text": text, "version": VERSION,
-                "name": acc["name"] if acc else data["settings"].get("nick", "")}
+        name = (acc["name"] if acc else data["settings"].get("nick", ""))[:32]
+        msg = {"t": "msg", "tid": st["tid"], "id": secrets.token_hex(6), "text": text, "ts": int(time.time()), "name": name, "ver": VERSION}
         if report:
-            body["report"] = build_report(120)
-        r = support_call("/api/send", body)
-        support_merge(r.get("msgs", []))
+            msg["rep"] = build_report(80)
+        support_publish(support_fit(msg))
         with lock:
-            st["seen"] = max([int(time.time())] + [m.get("ts", 0) for m in st.get("msgs", [])])
+            st["msgs"].append({"id": msg["id"], "from": "me", "text": text, "ts": msg["ts"], "sent_at": time.time(),
+                               "name": name, "rep": msg.get("rep", "")})
+            st["msgs"] = st["msgs"][-200:]
+            st["seen"] = max([int(time.time())] + [m.get("ts", 0) for m in st["msgs"]])
             save()
-        return {"msgs": data["support"]["msgs"]}
+        return {"msgs": support_public(st)}
 
     @endpoint
     def recheck_network(self):

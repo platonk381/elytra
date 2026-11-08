@@ -1,0 +1,15 @@
+{
+ "name": "Elytra · Входящие",
+ "short_name": "Входящие",
+ "start_url": "inbox.html",
+ "display": "standalone",
+ "background_color": "#0b0a14",
+ "theme_color": "#0b0a14",
+ "icons": [
+  {
+   "src": "img/logo.png",
+   "sizes": "256x256",
+   "type": "image/png"
+  }
+ ]
+}

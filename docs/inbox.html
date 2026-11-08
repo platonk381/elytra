@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b0a14">
+<title>Elytra · Входящие</title>
+<link rel="icon" href="favicon.png">
+<link rel="apple-touch-icon" href="img/logo.png">
+<link rel="manifest" href="inbox.webmanifest">
+<style>
+:root{--bg:#0b0a14;--panel:#13121f;--card:#1b1a2b;--line:rgba(255,255,255,.08);--text:#ecebf5;--muted:#9a98b0;--v:#8b5cf6;--p:#ec4899;--g:#22c55e}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font:15px/1.45 Inter,"Segoe UI",system-ui,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+.app{display:grid;grid-template-columns:340px 1fr;height:100dvh}
+.side{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+.top{display:flex;align-items:center;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+.top img{width:34px;height:34px;border-radius:10px}
+.top h1{font-size:18px;font-weight:800;flex:1}
+.status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}.dot.ok{background:var(--g);box-shadow:0 0 8px var(--g)}.dot.bad{background:#ef4444}
+.ibtn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--card)}
+.ibtn:hover{background:#262439}
+.list{overflow-y:auto;flex:1}
+.conv{display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);cursor:pointer;align-items:center}
+.conv:hover{background:rgba(255,255,255,.03)}.conv.on{background:rgba(139,92,246,.14)}
+.ava{width:44px;height:44px;border-radius:12px;flex:none;display:grid;place-items:center;font-weight:800;font-size:18px;color:#fff;image-rendering:pixelated;background-size:cover}
+.cmeta{flex:1;min-width:0}.cmeta b{display:flex;justify-content:space-between;gap:8px}.cmeta b small{color:var(--muted);font-weight:400;font-size:12px}
+.cmeta p{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{background:linear-gradient(135deg,var(--v),var(--p));border-radius:99px;font-size:12px;font-weight:800;padding:1px 8px;color:#fff}
+.empty{color:var(--muted);text-align:center;padding:50px 24px}
+.empty .big{font-size:44px;margin-bottom:10px}
+.main{display:flex;flex-direction:column;min-height:0;min-width:0}
+.chead{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.chead .cmeta p{white-space:normal}
+.back{display:none}
+.msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:min(620px,80%);display:flex;flex-direction:column}
+.m.p{align-self:flex-start}.m.me{align-self:flex-end;align-items:flex-end}
+.b{padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-break:break-word}
+.m.p .b{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
+.m.me .b{background:linear-gradient(135deg,var(--v),#7c3aed);border-bottom-right-radius:5px}
+.m small{color:var(--muted);font-size:11px;margin:4px 6px 0}
+.rep{margin-top:6px;align-self:flex-start;background:rgba(139,92,246,.15);color:#c4b5fd;border-radius:10px;padding:6px 12px;font-size:13px;font-weight:600}
+.compose{display:flex;gap:10px;padding:14px 18px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.compose textarea{flex:1;resize:none;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font:inherit;max-height:160px}
+.send{background:linear-gradient(135deg,var(--v),var(--p));border-radius:14px;padding:0 20px;font-weight:700}
+.send:disabled{opacity:.5}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:9}
+.ov.on{display:flex}
+.dlg{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;width:min(760px,100%);max-height:90dvh;display:flex;flex-direction:column;gap:12px}
+.dlg h2{font-size:19px}.dlg p{color:var(--muted)}
+.dlg pre{flex:1;overflow:auto;background:#07060d;border-radius:12px;padding:14px;font:12px/1.5 Consolas,monospace;white-space:pre-wrap;user-select:text}
+.row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.btn{background:var(--card);border-radius:12px;padding:10px 16px;font-weight:600;text-decoration:none;color:var(--text);display:inline-block}
+.btn.main{background:linear-gradient(135deg,var(--v),var(--p))}
+.btn.red{color:#fca5a5}
+code{background:var(--card);padding:2px 8px;border-radius:6px;font-size:13px;user-select:all}
+.lock{max-width:460px;margin:auto;text-align:center;padding:40px 24px}
+.lock .big{font-size:54px}.lock h1{margin:10px 0}.lock p{color:var(--muted)}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr}
+  .app.chat .side{display:none}.app:not(.chat) .main{display:none}
+  .back{display:grid}
+  .m{max-width:88%}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div class="ov" id="ov"><div class="dlg" id="dlg"></div></div>
+<script>
+/* elytra-box-1: X25519 + HMAC-SHA256 stream + HMAC tag (same as launcher.py) */
+const BOX = (() => {
+  const P = (1n << 255n) - 19n, te = new TextEncoder();
+  const md = a => ((a % P) + P) % P;
+  const pw = (b, e) => { let r = 1n; b = md(b); while (e > 0n) { if (e & 1n) r = r * b % P; b = b * b % P; e >>= 1n; } return r; };
+  const le2n = b => { let n = 0n; for (let i = b.length - 1; i >= 0; i--) n = (n << 8n) | BigInt(b[i]); return n; };
+  const n2le = n => { const o = new Uint8Array(32); for (let i = 0; i < 32; i++) { o[i] = Number(n & 255n); n >>= 8n; } return o; };
+  function x25519(k, u) {
+    k = Uint8Array.from(k); k[0] &= 248; k[31] &= 127; k[31] |= 64;
+    const kn = le2n(k), x1 = le2n(u) & ((1n << 255n) - 1n);
+    let x2 = 1n, z2 = 0n, x3 = x1, z3 = 1n, sw = 0n;
+    for (let t = 254n; t >= 0n; t--) {
+      const b = (kn >> t) & 1n; sw ^= b;
+      if (sw) { [x2, x3] = [x3, x2]; [z2, z3] = [z3, z2]; } sw = b;
+      const A = md(x2 + z2), AA = A * A % P, B = md(x2 - z2), BB = B * B % P, E = md(AA - BB);
+      const C = md(x3 + z3), D = md(x3 - z3), DA = D * A % P, CB = C * B % P;
+      x3 = md((DA + CB) ** 2n); z3 = md(x1 * md((DA - CB) ** 2n)); x2 = AA * BB % P; z2 = md(E * (AA + 121665n * E));
+    }
+    if (sw) { [x2, x3] = [x3, x2]; [z2, z3] = [z3, z2]; }
+    return n2le(x2 * pw(z2, P - 2n) % P);
+  }
+  const base = n2le(9n), pub = k => x25519(k, base);
+  const cat = (...a) => { const o = new Uint8Array(a.reduce((s, x) => s + x.length, 0)); let p = 0; for (const x of a) { o.set(x, p); p += x.length; } return o; };
+  async function hmac(key, data) {
+    const k = await crypto.subtle.importKey("raw", key, {name: "HMAC", hash: "SHA-256"}, false, ["sign"]);
+    return new Uint8Array(await crypto.subtle.sign("HMAC", k, data));
+  }
+  async function keys(shared, epub, apub) {
+    const k = new Uint8Array(await crypto.subtle.digest("SHA-256", cat(te.encode("elytra-box-1"), shared, epub, apub)));
+    return [await hmac(k, te.encode("enc")), await hmac(k, te.encode("mac"))];
+  }
+  async function stream(key, nonce, n) {
+    const out = new Uint8Array(Math.ceil(n / 32) * 32);
+    for (let i = 0; i * 32 < n; i++) { const c = new Uint8Array(4); new DataView(c.buffer).setUint32(0, i); out.set(await hmac(key, cat(nonce, c)), i * 32); }
+    return out.subarray(0, n);
+  }
+  const b64d = s => { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+  const b64e = b => btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const hex = s => Uint8Array.from(s.match(/../g), h => parseInt(h, 16));
+  async function inflate(b) { return new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("deflate"))).arrayBuffer()); }
+  async function deflate(b) { return new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new CompressionStream("deflate"))).arrayBuffer()); }
+  async function open(s, apriv) {
+    if (!s.startsWith("E1.")) throw new Error("format");
+    const raw = b64d(s.slice(3)), epub = raw.subarray(0, 32), nonce = raw.subarray(32, 48), tag = raw.subarray(48, 64), ct = raw.subarray(64);
+    const apub = pub(apriv), [ek, mk] = await keys(x25519(apriv, epub), epub, apub);
+    const want = (await hmac(mk, cat(nonce, ct))).subarray(0, 16);
+    if (want.some((v, i) => v !== tag[i])) throw new Error("tag");
+    const ks = await stream(ek, nonce, ct.length);
+    return JSON.parse(new TextDecoder().decode(await inflate(ct.map((v, i) => v ^ ks[i]))));
+  }
+  async function seal(obj, apub) {
+    const data = await deflate(te.encode(JSON.stringify(obj)));
+    const eph = crypto.getRandomValues(new Uint8Array(32)), epub = pub(eph), [ek, mk] = await keys(x25519(eph, apub), epub, apub);
+    const nonce = crypto.getRandomValues(new Uint8Array(16)), ks = await stream(ek, nonce, data.length), ct = data.map((v, i) => v ^ ks[i]);
+    return "E1." + b64e(cat(epub, nonce, (await hmac(mk, cat(nonce, ct))).subarray(0, 16), ct));
+  }
+  return {open, seal, pub, hex, b64d, b64e, inflate};
+})();
+
+const LS = {get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const rid = () => [...crypto.getRandomValues(new Uint8Array(6))].map(b => b.toString(16).padStart(2, "0")).join("");
+
+/* the private key arrives once in the link (#k=...) and stays only in this browser */
+const m = location.hash.match(/k=([0-9a-f]{64})/);
+if (m) { LS.set("elytra-admin-k", m[1]); history.replaceState(null, "", location.pathname); }
+const KEY = LS.get("elytra-admin-k", null);
+let CFG = null, convs = LS.get("elytra-convs", {}), since = LS.get("elytra-since", "all"), cur = null, online = null, firstLoad = true;
+const save = () => { LS.set("elytra-convs", convs); LS.set("elytra-since", since); };
+
+function when(ts) {
+  const d = new Date(ts * 1000), now = new Date();
+  return d.toDateString() === now.toDateString() ? d.toLocaleTimeString("ru", {hour: "2-digit", minute: "2-digit"}) : d.toLocaleDateString("ru", {day: "numeric", month: "short"}) + " " + d.toLocaleTimeString("ru", {hour: "2-digit", minute: "2-digit"});
+}
+const sorted = () => Object.entries(convs).sort((a, b) => (b[1].last || 0) - (a[1].last || 0));
+const unreadTotal = () => Object.values(convs).reduce((s, c) => s + (c.unread || 0), 0);
+const avaColor = s => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) % 360; return `hsl(${h} 60% 45%)`; };
+function ava(c) {
+  const n = c.name || "?";
+  return `<div class="ava" style="background-color:${avaColor(n)};background-image:url('https://mc-heads.net/avatar/${encodeURIComponent(n)}/88')">${esc(n[0].toUpperCase())}</div>`;
+}
+
+function render() {
+  document.title = (unreadTotal() ? `(${unreadTotal()}) ` : "") + "Elytra · Входящие";
+  if (!KEY) {
+    $("#root").innerHTML = `<div class="lock"><div class="big">🔒</div><h1>Входящие Elytra</h1><p>Открой свою личную ссылку — ту, что прислал Claude. Ключ сохранится в этом браузере.</p></div>`;
+    return;
+  }
+  const list = sorted();
+  const c = cur && convs[cur];
+  $("#root").innerHTML = `<div class="app ${c ? "chat" : ""}">
+    <aside class="side"><div class="top"><img src="img/logo.png" alt=""><div style="flex:1"><h1>Входящие</h1>
+      <div class="status"><span class="dot ${online === true ? "ok" : online === false ? "bad" : ""}"></span>${online === true ? "на связи" : online === false ? "нет связи с ntfy.sh" : "подключение…"}</div></div>
+      <button class="ibtn" title="Уведомления на телефон" onclick="phoneHelp()">🔔</button></div>
+      <div class="list">${list.length ? list.map(([tid, v]) => {
+        const lm = v.msgs[v.msgs.length - 1] || {};
+        return `<div class="conv ${tid === cur ? "on" : ""}" onclick="openConv('${tid}')">${ava(v)}<div class="cmeta"><b><span>${esc(v.name || "Игрок")}</span><small>${lm.ts ? when(lm.ts) : ""}</small></b>
+          <p>${lm.from === "me" ? "Ты: " : ""}${esc(lm.text || "")}</p></div>${v.unread ? `<span class="badge">${v.unread}</span>` : ""}</div>`;
+      }).join("") : `<div class="empty"><div class="big">📭</div>Пока пусто.<br>Когда игрок напишет из Elytra, сообщение появится здесь.</div>`}</div></aside>
+    <main class="main">${c ? `
+      <div class="chead"><button class="ibtn back" onclick="cur=null;render()">←</button>${ava(c)}<div class="cmeta"><b><span>${esc(c.name || "Игрок")}</span></b><p>Elytra ${esc(c.ver || "?")}</p></div>
+        <button class="ibtn" title="Удалить чат" onclick="delConv()">🗑</button></div>
+      <div class="msgs" id="msgs">${c.msgs.map((x, i) => `<div class="m ${x.from}"><div class="b">${esc(x.text)}</div>
+        ${x.rep ? `<button class="rep" onclick="showRep(${i})">📄 Отчёт</button>` : ""}
+        <small>${when(x.ts)}${x.from === "me" ? (x.acked ? " · ✓✓ доставлено" : " · ✓ отправлено") : ""}</small></div>`).join("")}</div>
+      <div class="compose"><textarea id="txt" rows="1" placeholder="Ответ игроку…" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea><button class="send" id="sendBtn" onclick="reply()">Отправить</button></div>`
+      : `<div class="empty" style="margin:auto"><div class="big">💬</div>Выбери чат слева</div>`}</main></div>`;
+  const box = $("#msgs"); if (box) box.scrollTop = box.scrollHeight;
+  const ta = $("#txt"); if (ta) ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); reply(); } };
+}
+function openConv(tid) { cur = tid; convs[tid].unread = 0; save(); render(); const ta = $("#txt"); if (ta && matchMedia("(min-width:761px)").matches) ta.focus(); }
+function delConv() { if (!confirm("Удалить этот чат? Если игрок напишет снова, чат появится заново.")) return; delete convs[cur]; cur = null; save(); render(); }
+function dialog(html) { $("#dlg").innerHTML = html; $("#ov").classList.add("on"); }
+function closeDlg() { $("#ov").classList.remove("on"); }
+$("#ov").onclick = e => { if (e.target.id === "ov") closeDlg(); };
+function showRep(i) {
+  const x = convs[cur].msgs[i];
+  dialog(`<h2>📄 Отчёт игрока</h2><pre>${esc(x.rep)}</pre><div class="row"><button class="btn" onclick="navigator.clipboard.writeText(convs[cur].msgs[${i}].rep)">Скопировать</button><button class="btn main" onclick="closeDlg()">Закрыть</button></div>`);
+}
+function phoneHelp() {
+  dialog(`<h2>🔔 Уведомления на телефон</h2>
+    <p>1. Поставь бесплатное приложение <b>ntfy</b> (Google Play / App Store).</p>
+    <p>2. Нажми «+», сервер оставь <b>ntfy.sh</b>, тема: <code>${esc(CFG ? CFG.inbox : "…")}</code></p>
+    <p>3. Готово — когда кто-то напишет, придёт пуш «Elytra: new support message». Нажми на него и открой эту страницу.</p>
+    <p>Текст сообщений в ntfy не виден: он зашифрован, прочитать его можно только здесь.</p>
+    <div class="row">${"Notification" in window && Notification.permission !== "granted" ? `<button class="btn" onclick="Notification.requestPermission().then(()=>closeDlg())">Уведомления в браузере</button>` : ""}<button class="btn main" onclick="closeDlg()">Понятно</button></div>`);
+}
+
+async function publish(topic, obj) {
+  const r = await fetch(`${CFG.ntfy}/${topic}`, {method: "POST", body: JSON.stringify(obj)});
+  if (!r.ok) throw new Error("HTTP " + r.status);
+}
+async function reply() {
+  const ta = $("#txt"), text = ta.value.trim(); if (!text || !cur) return;
+  const btn = $("#sendBtn"); btn.disabled = true;
+  const msg = {id: rid(), from: "me", text, ts: Math.floor(Date.now() / 1000), sent_at: Date.now()};
+  try {
+    await publish("elytra-r-" + cur, {t: "reply", id: msg.id, text, ts: msg.ts});
+    convs[cur].msgs.push(msg); convs[cur].last = msg.ts; save(); render();
+  } catch (e) { alert("Не отправилось: " + e.message + ". Проверь интернет."); btn.disabled = false; }
+}
+
+let notified = 0;
+function notify(c, text) {
+  if (document.visibilityState === "visible" && cur) return;
+  try { if ("Notification" in window && Notification.permission === "granted") new Notification(c.name || "Игрок", {body: text, icon: "img/logo.png", tag: "elytra"}); } catch (e) {}
+}
+async function poll() {
+  if (!KEY || !CFG) return;
+  try {
+    const r = await fetch(`${CFG.ntfy}/${CFG.inbox}/json?poll=1&since=${encodeURIComponent(since)}`);
+    if (!r.ok) throw new Error(r.status);
+    const lines = (await r.text()).split("\n").filter(Boolean);
+    const key = BOX.hex(KEY), acks = {};
+    let changed = false;
+    for (const line of lines) {
+      let ev; try { ev = JSON.parse(line); } catch (e) { continue; }
+      if (ev.event !== "message") continue;
+      since = ev.id;
+      let o; try { o = await BOX.open(ev.message || "", key); } catch (e) { continue; }
+      if (!/^[0-9a-f]{32}$/.test(o.tid || "")) continue;
+      const c = convs[o.tid] || (convs[o.tid] = {name: "", ver: "", msgs: [], unread: 0, last: 0});
+      if (o.t === "msg") {
+        (acks[o.tid] = acks[o.tid] || []).push(o.id);
+        if (c.msgs.some(x => x.id === o.id && x.from === "p")) continue;
+        c.name = String(o.name || c.name || "Игрок").slice(0, 32); c.ver = String(o.ver || c.ver).slice(0, 16);
+        c.msgs.push({id: o.id, from: "p", text: String(o.text || ""), ts: o.ts || Math.floor(Date.now() / 1000), rep: o.rep || ""});
+        c.msgs.sort((a, b) => a.ts - b.ts); c.last = Math.max(c.last, o.ts || 0);
+        if (o.tid !== cur || document.visibilityState !== "visible") c.unread = (c.unread || 0) + 1;
+        if (!firstLoad || o.ts > Date.now() / 1000 - 600) notify(c, o.text);
+        changed = true;
+      } else if (o.t === "ack") {
+        for (const x of c.msgs) if (x.from === "me" && (o.ids || []).includes(x.id) && !x.acked) { x.acked = true; changed = true; }
+      }
+    }
+    for (const [tid, ids] of Object.entries(acks)) publish("elytra-r-" + tid, {t: "ack", ids: ids.slice(-50)}).catch(() => {});
+    /* the player's topic keeps messages ~12 h: resend replies the launcher hasn't confirmed */
+    for (const [tid, c] of Object.entries(convs)) for (const x of c.msgs)
+      if (x.from === "me" && !x.acked && Date.now() - (x.sent_at || 0) > 5 * 3600e3 && Date.now() / 1000 - x.ts < 4 * 86400) {
+        x.sent_at = Date.now(); changed = true; publish("elytra-r-" + tid, {t: "reply", id: x.id, text: x.text, ts: x.ts}).catch(() => {});
+      }
+    if (online !== true) { online = true; changed = true; }
+    firstLoad = false;
+    if (changed) {
+      save();
+      const ta = $("#txt"), keep = ta ? ta.value : "", focus = document.activeElement === ta;
+      render();
+      const t2 = $("#txt"); if (t2) { t2.value = keep; if (focus) t2.focus(); }
+    }
+  } catch (e) { if (online !== false) { online = false; render(); } }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { if (cur && convs[cur]) { convs[cur].unread = 0; save(); render(); } poll(); } });
+
+(async () => {
+  render();
+  if (!KEY) return;
+  try { CFG = await (await fetch("support.json", {cache: "no-store"})).json(); } catch (e) { online = false; render(); return; }
+  if (CFG.pub !== [...BOX.pub(BOX.hex(KEY))].map(b => b.toString(16).padStart(2, "0")).join("")) {
+    $("#root").innerHTML = `<div class="lock"><div class="big">⚠️</div><h1>Ключ не подходит</h1><p>Этот ключ не совпадает с ключом сайта. Открой самую свежую личную ссылку.</p></div>`; return;
+  }
+  poll(); setInterval(poll, 10000);
+})();
+</script>
+</body>
+</html>

@@ -42,7 +42,7 @@ let supOpen = false, supTimer = null;
 function supBubbles(msgs) {
   if (!msgs.length) return `<div class="supempty">${ico("info")}<div><b>${T("sup.hello")}</b><p>${T("sup.hello_sub")}</p></div></div>`;
   return msgs.map(m => `<div class="supmsg ${m.from === "dev" ? "dev" : "me"}"><div class="supb">${esc(m.text).replace(/\n/g, "<br>")}</div>
-    <small>${m.from === "dev" ? T("sup.dev") + " · " : ""}${new Date(m.ts * 1000).toLocaleString([], {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"})}</small></div>`).join("");
+    <small>${m.from === "dev" ? T("sup.dev") + " · " : ""}${m.from === "me" ? (m.acked ? "✓✓ " : "✓ ") : ""}${new Date(m.ts * 1000).toLocaleString([], {day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"})}</small></div>`).join("");
 }
 function drawSupport(msgs) {
   const box = $("#supList"); if (!box) return;

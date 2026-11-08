@@ -769,7 +769,8 @@ const I18N = {
   "sup.off": "Support chat isn't set up yet",
   "sup.fail": "Couldn't send the message ({err}). Check your internet",
   "sup.rate": "Too many messages — try again in an hour",
-  "sup.empty": "Write a message first"
+  "sup.empty": "Write a message first",
+  "sup.long": "The message is too long — make it shorter"
  },
  "ru": {
   "u.gb": "ГБ",
@@ -1540,7 +1541,8 @@ const I18N = {
   "sup.off": "Чат поддержки ещё не настроен",
   "sup.fail": "Не удалось отправить сообщение ({err}). Проверь интернет",
   "sup.rate": "Слишком много сообщений — попробуй через час",
-  "sup.empty": "Сначала напиши сообщение"
+  "sup.empty": "Сначала напиши сообщение",
+  "sup.long": "Сообщение слишком длинное — сократи его"
  },
  "uk": {
   "u.gb": "ГБ",
@@ -2311,7 +2313,8 @@ const I18N = {
   "sup.off": "Чат підтримки ще не налаштований",
   "sup.fail": "Не вдалося надіслати повідомлення ({err}). Перевір інтернет",
   "sup.rate": "Забагато повідомлень — спробуй за годину",
-  "sup.empty": "Спочатку напиши повідомлення"
+  "sup.empty": "Спочатку напиши повідомлення",
+  "sup.long": "Повідомлення задовге — скороти його"
  },
  "de": {
   "u.gb": "GB",
@@ -3082,7 +3085,8 @@ const I18N = {
   "sup.off": "Der Support-Chat ist noch nicht eingerichtet",
   "sup.fail": "Nachricht konnte nicht gesendet werden ({err}). Prüfe dein Internet",
   "sup.rate": "Zu viele Nachrichten — versuche es in einer Stunde",
-  "sup.empty": "Schreib zuerst eine Nachricht"
+  "sup.empty": "Schreib zuerst eine Nachricht",
+  "sup.long": "Die Nachricht ist zu lang — kürze sie"
  },
  "es": {
   "u.gb": "GB",
@@ -3853,6 +3857,7 @@ const I18N = {
   "sup.off": "El chat de soporte aún no está configurado",
   "sup.fail": "No se pudo enviar el mensaje ({err}). Revisa tu conexión",
   "sup.rate": "Demasiados mensajes: inténtalo en una hora",
-  "sup.empty": "Escribe un mensaje primero"
+  "sup.empty": "Escribe un mensaje primero",
+  "sup.long": "El mensaje es demasiado largo: acórtalo"
  }
 };
