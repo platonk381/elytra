@@ -1,24 +1,31 @@
-; Elytra — Windows installer (Inno Setup 6, https://jrsoftware.org/isinfo.php)
-; install.bat builds dist\Elytra.exe and then this file into dist\Elytra-Setup.exe automatically
-; if Inno Setup is installed. Elytra-Setup.exe is the file to send to friends: no Python needed.
-#define AppVer "0.9.0"
+; Elytra — Windows installer (Inno Setup 6). Built automatically by GitHub Actions (.github/workflows/release.yml);
+; locally install.bat builds it too if Inno Setup is installed.
+#ifndef AppVer
+  #define AppVer "0.10.1"
+#endif
 
 [Setup]
 AppId={{6E7A1C52-9B1E-4E2B-9D57-E1A7E0A0F0B1}
 AppName=Elytra
 AppVersion={#AppVer}
+AppVerName=Elytra {#AppVer}
 AppPublisher=Elytra
+AppPublisherURL=https://platonk381.github.io/elytra/
 DefaultDirName={localappdata}\Programs\Elytra
 DisableProgramGroupPage=yes
 DisableDirPage=yes
+DisableReadyPage=yes
 PrivilegesRequired=lowest
 OutputDir=dist
 OutputBaseFilename=Elytra-Setup
 SetupIconFile=icon.ico
 UninstallDisplayIcon={app}\Elytra.exe
+UninstallDisplayName=Elytra
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+CloseApplications=force
+RestartApplications=no
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
@@ -32,6 +39,13 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "dist\Elytra.exe"; DestDir: "{app}"; Flags: ignoreversion
+
+[InstallDelete]
+; leftovers of the old install.bat setup
+Type: files; Name: "{app}\uninstall.bat"
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Uninstall\Elytra"; Flags: deletekey dontcreatekey
 
 [Icons]
 Name: "{userprograms}\Elytra"; Filename: "{app}\Elytra.exe"

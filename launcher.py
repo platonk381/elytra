@@ -11,14 +11,14 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.9.0"
+VERSION = "0.10.1"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
 MS_REDIRECT = "https://login.microsoftonline.com/common/oauth2/nativeclient"
 LICENSE_ONLY = True      # once Microsoft login is set up: play only with a licensed account
 DISCORD_CLIENT_ID = "1568632716793085972"   # Discord Developer Portal → your app → «Application ID»
-UPDATE_REPO = ""         # GitHub "user/repo" whose Releases contain Elytra.exe
+UPDATE_REPO = "platonk381/elytra"         # GitHub "user/repo" whose Releases contain Elytra.exe
 # ==============================================================================
 APPDATA = os.getenv("APPDATA") or os.path.expanduser("~")
 BASE = os.path.join(APPDATA, ".elytra")
@@ -392,6 +392,42 @@ def api(path, params=None):
     return http_json(API + path + ("?" + urllib.parse.urlencode(params) if params else ""))
 
 
+_tls = threading.local()
+
+
+def _session():
+    """One keep-alive HTTP session per download thread: thousands of small files don't each pay
+    for a new TLS handshake (this is most of the speed-up for game assets)."""
+    sess = getattr(_tls, "sess", None)
+    if sess is None:
+        try:
+            import requests
+            from requests.adapters import HTTPAdapter
+            sess = requests.Session()
+            sess.headers.update(UA)
+            sess.mount("https://", HTTPAdapter(pool_connections=8, pool_maxsize=8, max_retries=0))
+        except ImportError:
+            sess = False
+        _tls.sess = sess
+    return sess
+
+
+def _fetch_to(url, f, h):
+    sess = _session()
+    if sess:
+        with sess.get(url, stream=True, timeout=(10, 30)) as r:   # the patched Session.request adds mirror fallback
+            if r.status_code >= 400:
+                raise urllib.error.HTTPError(url, r.status_code, r.reason, r.headers, None)
+            for chunk in r.iter_content(65536):
+                h.update(chunk)
+                f.write(chunk)
+        return
+    with open_url(url, 40) as r:
+        while chunk := r.read(65536):
+            h.update(chunk)
+            f.write(chunk)
+
+
 def download(url, dest, sha1=None, tries=3):
     if not url.startswith("https://"):
         raise LauncherError("err.unsafe_url", url=url)
@@ -400,10 +436,8 @@ def download(url, dest, sha1=None, tries=3):
     for attempt in range(tries):
         h = hashlib.sha1()
         try:
-            with open_url(url, 40) as r, open(tmp, "wb") as f:
-                while chunk := r.read(65536):
-                    h.update(chunk)
-                    f.write(chunk)
+            with open(tmp, "wb") as f:
+                _fetch_to(url, f, h)
         except Exception:
             if attempt == tries - 1:
                 if os.path.exists(tmp):
@@ -447,17 +481,29 @@ def probe_network():
                         if time.time() - t0 > 8:
                             raise TimeoutError("too slow")
                 return time.time() - t0
-            try:
-                fetch(url)
-                NET[g] = "official"
-            except Exception as e:
-                off, mir = pairs[0]
+            off, mir = pairs[0]
+            res = {}
+
+            def timed(kind, u):
                 try:
-                    fetch(mir + url[len(off):])
-                    NET[g] = "mirror"
-                except Exception:
-                    NET[g] = "down"
-                log(f"net probe {g}: official failed ({type(e).__name__}: {e}) -> {NET[g]}")
+                    res[kind] = fetch(u)
+                except Exception as e:
+                    res[kind] = e
+            ts = [threading.Thread(target=timed, args=("off", url), daemon=True),
+                  threading.Thread(target=timed, args=("mir", mir + url[len(off):]), daemon=True)]
+            for t_ in ts:
+                t_.start()
+            for t_ in ts:
+                t_.join(16)
+            o, m = res.get("off"), res.get("mir")
+            o_ok, m_ok = isinstance(o, float), isinstance(m, float)
+            if o_ok and (not m_ok or o <= m * 2.5):     # official unless the mirror is much faster
+                NET[g] = "official"
+            elif m_ok:
+                NET[g] = "mirror"
+            else:
+                NET[g] = "down"
+            log(f"net probe {g}: official={o if o_ok else type(o).__name__} mirror={m if m_ok else type(m).__name__} -> {NET[g]}")
         finally:
             NET_READY[g].set()
             emit("net", net_status())
@@ -588,7 +634,7 @@ OS_NAME = {"win32": "windows", "darwin": "osx"}.get(sys.platform, "linux")
 ARCH = _platform.machine().lower()
 JRE_PLATFORM = {"windows": "windows-arm64" if ARCH in ("arm64", "aarch64") else ("windows-x64" if sys.maxsize > 2**32 else "windows-x86"),
                 "linux": "linux" if ARCH in ("x86_64", "amd64") else None, "osx": None}[OS_NAME]
-PARALLEL = 16
+PARALLEL = 24
 
 
 def rules_ok(rules):
@@ -631,7 +677,8 @@ def parallel_download(task, jobs):
             seen.add(j[1])
             todo.append(j)
     if not todo:
-        return
+        return 0
+    t0 = time.time()
     task.set_status(msg("st.fetch", n=len(todo)))
     task.set_max(len(todo))
     errors, done = [], 0
@@ -644,11 +691,13 @@ def parallel_download(task, jobs):
                 errors.append(e)
             done += 1
             task.set_progress(done)
+    log(f"parallel download: {len(todo)} files in {time.time() - t0:.0f}s, groups: {net_status()}")
     if errors:
         log(f"parallel download: {len(errors)} of {len(todo)} failed, first: {errors[0]!r}")
         if len(errors) > len(todo) // 2:
             raise errors[0]
     # a few failures are fine: minecraft-launcher-lib will fetch the rest itself
+    return len(errors)
 
 
 def lib_jobs(libs, default_repo="https://libraries.minecraft.net/"):
@@ -673,6 +722,7 @@ def lib_jobs(libs, default_repo="https://libraries.minecraft.net/"):
 
 
 def prefetch_vanilla(mc, task):
+    """Returns True when everything the game needs is on disk (so the slow library re-check can be skipped)."""
     try:
         task.set_status(msg("st.prepare", mc=mc))
         vdir = os.path.join(BASE, "versions", mc)
@@ -704,12 +754,18 @@ def prefetch_vanilla(mc, task):
                 h = o["hash"]
                 jobs.append((f"https://resources.download.minecraft.net/{h[:2]}/{h}",
                              os.path.join(BASE, "assets", "objects", h[:2], h), h, o.get("size")))
-        jobs += runtime_jobs(vj)
-        parallel_download(task, jobs)
+        rt = runtime_jobs(vj)
+        jobs += rt
+        failed = parallel_download(task, jobs)
+        legacy = any((lib.get("natives") or {}) for lib in vj.get("libraries", [])) or \
+            (ai or {}).get("id") in ("legacy", "pre-1.6") or not cl
+        need_rt = bool((vj.get("javaVersion") or {}).get("component")) and not data["settings"].get("java")
+        return not failed and not legacy and (bool(rt) or not need_rt)
     except LauncherError:
         raise
     except Exception:
         log("prefetch failed, falling back to the normal installer:\n" + traceback.format_exc())
+    return False
 
 
 def runtime_jobs(vj):
@@ -747,7 +803,7 @@ def latest_loader(kind, mc):
     return (stable or lst)[0]["loader"]["version"]
 
 
-def install_fabric_like(kind, mc, lv, task):
+def install_fabric_like(kind, mc, lv, task, full=False):
     """Fabric/Quilt without their Java installer: write the profile JSON and fetch libraries in parallel."""
     meta, repo = LOADER_META[kind]
     lv = lv or latest_loader(kind, mc)
@@ -758,9 +814,10 @@ def install_fabric_like(kind, mc, lv, task):
     os.makedirs(vdir, exist_ok=True)
     with open(os.path.join(vdir, f"{vid}.json"), "w", encoding="utf-8") as f:
         json.dump(prof, f, indent=1)
-    prefetch_vanilla(mc, task)
-    parallel_download(task, lib_jobs(prof.get("libraries", []), repo))
-    mll.install.install_minecraft_version(vid, BASE, callback=task.cb)
+    complete = prefetch_vanilla(mc, task)
+    failed = parallel_download(task, lib_jobs(prof.get("libraries", []), repo))
+    if full or not complete or failed:
+        mll.install.install_minecraft_version(vid, BASE, callback=task.cb)
     return vid, lv
 
 
@@ -775,14 +832,14 @@ def forge_java(mc):
         return None
 
 
-def install_loader(mc, loader, lv, task):
+def install_loader(mc, loader, lv, task, full=False):
     if loader == "vanilla":
-        prefetch_vanilla(mc, task)
-        mll.install.install_minecraft_version(mc, BASE, callback=task.cb)
+        if not prefetch_vanilla(mc, task) or full:
+            mll.install.install_minecraft_version(mc, BASE, callback=task.cb)
         return mc, None
     if loader in ("fabric", "quilt"):
         try:
-            return install_fabric_like(loader, mc, lv, task)
+            return install_fabric_like(loader, mc, lv, task, full)
         except LauncherError:
             raise
         except Exception:
@@ -816,10 +873,40 @@ def add_instance(name, mc, loader, icon=None, extra=None):
     return iid
 
 
-def setup_job(task, iid, lv=None):
+def seed_ready_versions():
+    """Versions that existing working instances already use count as installed."""
+    ready = data.setdefault("ready_versions", {})
+    for inst in data["instances"].values():
+        vid = inst.get("version_id")
+        if inst.get("status") == "ready" and vid and os.path.isfile(os.path.join(BASE, "versions", vid, f"{vid}.json")):
+            ready.setdefault(f"{inst['loader']}|{inst['mc']}|{inst.get('loader_version') or ''}", [vid, inst.get("loader_version")])
+            ready.setdefault(f"{inst['loader']}|{inst['mc']}|", [vid, inst.get("loader_version")])
+
+
+def ensure_version(mc, loader, lv, task, force=False):
+    """Installs a game version once. Later instances on the same version reuse it instantly
+    instead of re-checking thousands of files (Repair passes force=True for a full check)."""
+    key = f"{loader}|{mc}|{lv or ''}"
+    ready = data.setdefault("ready_versions", {})
+    hit = ready.get(key)
+    if hit and not force and os.path.isfile(os.path.join(BASE, "versions", hit[0], f"{hit[0]}.json")):
+        return hit[0], hit[1]
+    t0 = time.time()
+    vid, lv2 = install_loader(mc, loader, lv, task, full=force)
+    log(f"installed {loader} {mc} ({vid}) in {time.time() - t0:.0f}s")
+    with lock:
+        ready[key] = [vid, lv2]
+        ready[f"{loader}|{mc}|{lv2 or ''}"] = [vid, lv2]
+        if not lv:
+            ready[f"{loader}|{mc}|"] = [vid, lv2]
+        save()
+    return vid, lv2
+
+
+def setup_job(task, iid, lv=None, force=False):
     inst = get_inst(iid)
     try:
-        vid, lv = install_loader(inst["mc"], inst["loader"], lv, task)
+        vid, lv = ensure_version(inst["mc"], inst["loader"], lv, task, force)
     except Exception:
         inst["status"] = "broken"
         save()
@@ -2124,7 +2211,10 @@ def check_self_update():
     tag = rel.get("tag_name", "").lstrip("vV")
     if version_tuple(tag) <= version_tuple(VERSION):
         return None
-    asset = next((a for a in rel.get("assets", []) if a.get("name", "").lower().endswith(".exe")), None)
+    exes = [a for a in rel.get("assets", []) if a.get("name", "").lower().endswith(".exe")]
+    # the portable Elytra.exe replaces itself; Elytra-Setup.exe is for new users
+    asset = next((a for a in exes if a["name"].lower() == "elytra.exe"), None) or \
+        next((a for a in exes if "setup" not in a["name"].lower()), None)
     if not asset:
         return None
     _update_info.update(version=tag, url=asset["browser_download_url"], digest=asset.get("digest") or "",
@@ -2221,6 +2311,133 @@ def collect_stats(iids):
         return [[k.split(":")[-1], v] for k, v in sorted(d.items(), key=lambda x: -x[1])[:n]]
     tot.update(top_mined=top(mined, 5), top_killed=top(killed, 5), nemesis=top(killed_by, 1))
     return tot
+
+
+# ---------------- Elytra Wrapped (monthly recap) ----------------
+WRAP_KEYS = ("diamonds", "blocks", "distance", "elytra", "deaths", "mob_kills", "creepers", "jumps", "fish", "crafted", "trades")
+
+
+def month_key(ts=None):
+    return time.strftime("%Y-%m", time.localtime(ts or time.time()))
+
+
+def snapshot_month():
+    """Remembers world-stat totals the first time we see a month, so later we can show what changed in it."""
+    try:
+        mk = month_key()
+        base = data.setdefault("wrapped_base", {})
+        if mk not in base:
+            st = collect_stats(list(data["instances"]))
+            with lock:
+                base[mk] = {"t": int(time.time()), **{k: st[k] for k in WRAP_KEYS}}
+                for old in sorted(base)[:-14]:
+                    base.pop(old, None)
+                save()
+    except Exception:
+        log("wrapped snapshot failed:\n" + traceback.format_exc())
+
+
+def log_session(iid, start, end):
+    with lock:
+        pl = data.setdefault("play_log", [])
+        pl.append([iid, int(start), int(end)])
+        del pl[:-3000]
+        save()
+
+
+PLAYER_TYPES = ("miner", "traveler", "warrior", "pilot", "daredevil", "night_owl", "marathon", "builder", "explorer")
+
+
+def wrapped(period):
+    """period: 'YYYY-MM' or 'all'."""
+    now = time.time()
+    insts = data["instances"]
+    log_all = [s for s in data.get("play_log", []) if s[0] in insts]
+    if period == "all":
+        sessions = log_all
+        per_inst = {iid: i.get("playtime", 0) for iid, i in insts.items()}
+        total = sum(per_inst.values())
+        n_sessions = sum(i.get("sessions", 0) for i in insts.values())
+        st = collect_stats(list(insts))
+        delta = {k: st[k] for k in WRAP_KEYS}
+        since = None
+    else:
+        sessions = [s for s in log_all if month_key(s[1]) == period]
+        per_inst = {}
+        for iid, a, b in sessions:
+            per_inst[iid] = per_inst.get(iid, 0) + (b - a)
+        total = sum(per_inst.values())
+        n_sessions = len(sessions)
+        st = collect_stats(list(insts))
+        base = data.get("wrapped_base", {}).get(period)
+        if base:
+            delta = {k: max(0, st[k] - base.get(k, 0)) for k in WRAP_KEYS}
+            since = base["t"]
+        else:
+            delta, since = {k: 0 for k in WRAP_KEYS}, None
+    fav = max(per_inst.items(), key=lambda x: x[1], default=(None, 0))
+    fav_inst = insts.get(fav[0]) if fav[0] else None
+    days = sorted({time.strftime("%Y-%m-%d", time.localtime(a)) for _, a, _ in sessions})
+    streak, best = 0, 0
+    prev = None
+    for d in days:
+        t = time.mktime(time.strptime(d, "%Y-%m-%d"))
+        streak = streak + 1 if prev is not None and round((t - prev) / 86400) == 1 else 1
+        best, prev = max(best, streak), t
+    hours = [0] * 24
+    for _, a, b in sessions:
+        hours[time.localtime(a).tm_hour] += b - a
+    peak = max(range(24), key=lambda h: hours[h]) if any(hours) else None
+    longest = max((b - a for _, a, b in sessions), default=0)
+    night = sum(hours[h] for h in (22, 23, 0, 1, 2, 3, 4)) / max(1, sum(hours))
+    km = delta["distance"] / 100000
+    scores = {
+        "miner": delta["blocks"] / 800, "traveler": km / 15, "warrior": delta["mob_kills"] / 120,
+        "pilot": delta["elytra"] / 100000 / 4, "daredevil": delta["deaths"] / 15,
+        "night_owl": (night - 0.4) * 4 if sessions else 0, "marathon": (longest / 3600 - 2) if longest else 0,
+        "builder": delta["crafted"] / 600,
+    }
+    ptype = max(scores, key=scores.get)
+    if scores[ptype] < 0.5:
+        ptype = "explorer"
+    top_mined = st["top_mined"][:3]
+    mods = sum(1 for i in insts.values() for k in i.get("content", {}) if k.startswith("mods/"))
+    if period != "all":
+        bump_once("wrapped_seen")
+    return {
+        "period": period, "since": since, "seconds": int(total), "sessions": n_sessions, "days": len(days), "streak": best,
+        "longest": int(longest), "peak_hour": peak, "night_share": round(night, 2),
+        "fav": {"id": fav[0], "name": fav_inst["name"], "loader": fav_inst["loader"], "mc": fav_inst["mc"],
+                "icon": fav_inst.get("icon"), "seconds": int(fav[1]), "share": round(fav[1] / total, 2) if total else 0} if fav_inst else None,
+        "stats": {"km": round(km, 1), "elytra_km": round(delta["elytra"] / 100000, 1), "blocks": delta["blocks"],
+                  "diamonds": delta["diamonds"], "deaths": delta["deaths"], "mob_kills": delta["mob_kills"],
+                  "creepers": delta["creepers"], "jumps": delta["jumps"], "fish": delta["fish"], "crafted": delta["crafted"]},
+        "top_mined": top_mined, "nemesis": (st["nemesis"] or [[None, 0]])[0][0], "type": ptype,
+        "instances": len(insts), "mods": mods, "months": sorted({month_key(a) for _, a, _ in log_all}, reverse=True),
+        "has_month_stats": bool(period == "all" or data.get("wrapped_base", {}).get(period)),
+    }
+
+
+def bump_once(counter):
+    if not data["counters"].get(counter):
+        bump(counter)
+
+
+def save_png(data_url, name):
+    if not data_url.startswith("data:image/png;base64,"):
+        raise LauncherError("err.generic", msg="bad image")
+    png = base64.b64decode(data_url.split(",", 1)[1])
+    if png[:8] != b"\x89PNG\r\n\x1a\n" or len(png) > 20_000_000:
+        raise LauncherError("err.generic", msg="bad image")
+    pics = os.path.join(os.path.expanduser("~"), "Pictures")
+    folder = os.path.join(pics if os.path.isdir(pics) else os.path.expanduser("~"), "Elytra")
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, re.sub(r"[^\w.-]+", "_", name)[:80] + ".png")
+    with open(path, "wb") as f:
+        f.write(png)
+    if os.name == "nt":
+        subprocess.Popen(["explorer", "/select,", path])
+    return path
 
 
 # ---------------- pre-launch check ----------------
@@ -2645,7 +2862,8 @@ ACHIEVEMENTS = [
     ("crafter_1000", "🔨", "crafted", 1000), ("mods_50", "🧩", "mods", 50), ("instances_5", "🗂️", "instances", 5),
     ("servers_3", "🌐", "servers", 3), ("modpack_1", "📦", "modpacks", 1), ("boost_1", "⚡", "boosted", 1),
     ("share_1", "🔗", "shared", 1), ("friend_1", "👥", "friend_hosts", 1), ("night_owl", "🦉", "night", 1),
-    ("sets_1", "🎒", "sets", 1),
+    ("sets_1", "🎒", "sets", 1), ("pilot_50", "🪽", "game_best", 50), ("pilot_200", "🏆", "game_best", 200),
+    ("wrapped_1", "🎁", "wrapped", 1),
 ]
 
 
@@ -2662,7 +2880,7 @@ def achievement_metrics():
         "instances": len(insts), "servers": len(data["servers"]),
         "modpacks": sum(1 for i in insts if i.get("modpack")), "boosted": sum(1 for i in insts if i.get("boosted")),
         "shared": c.get("shared", 0), "friend_hosts": c.get("friend_hosts", 0), "night": c.get("night", 0),
-        "sets": len(data["sets"]),
+        "sets": len(data["sets"]), "game_best": data.get("game", {}).get("best", 0), "wrapped": c.get("wrapped_seen", 0),
     }
 
 
@@ -2742,6 +2960,35 @@ def _entry(source, name, path, mc, loader, lv):
     return e
 
 
+def guess_from_mods(gdir):
+    """Last resort when a launcher keeps no readable metadata: look at fabric.mod.json / mods.toml of the mods."""
+    mods = os.path.join(gdir, "mods")
+    loader, mc = None, None
+    if os.path.isdir(mods):
+        for fn in os.listdir(mods)[:60]:
+            if not fn.endswith(".jar"):
+                continue
+            try:
+                with zipfile.ZipFile(os.path.join(mods, fn)) as z:
+                    names = z.namelist()
+                    if "fabric.mod.json" in names:
+                        loader = loader or "fabric"
+                        dep = json.loads(z.read("fabric.mod.json")).get("depends", {}).get("minecraft")
+                        m = re.search(r"1\.\d+(?:\.\d+)?", json.dumps(dep)) if dep else None
+                        mc = mc or (m.group(0) if m else None)
+                    elif "quilt.mod.json" in names:
+                        loader = loader or "quilt"
+                    elif "META-INF/neoforge.mods.toml" in names:
+                        loader = loader or "neoforge"
+                    elif "META-INF/mods.toml" in names:
+                        loader = loader or "forge"
+            except Exception:
+                continue
+            if loader and mc:
+                break
+    return mc, loader, None
+
+
 def scan_launchers():
     found, home = [], os.path.expanduser("~")
     # official launcher / TLauncher: one shared .minecraft folder
@@ -2808,60 +3055,104 @@ def scan_launchers():
             if m:
                 loader, lv = m.group(1), m.group(2)
             found.append(_entry("curseforge", j.get("name") or d, idir, mc, loader, lv))
-    # Modrinth App
-    mr = os.path.join(APPDATA, "com.modrinth.theseus")
-    pdir = os.path.join(mr, "profiles")
-    if os.path.isdir(pdir):
-        rows = []
+    # Modrinth App: "ModrinthApp" since 0.8.0, "com.modrinth.theseus" before
+    seen_mr = set()
+    for mr in (os.path.join(APPDATA, "ModrinthApp"), os.path.join(APPDATA, "com.modrinth.theseus")):
+        pdir = os.path.join(mr, "profiles")
+        if not os.path.isdir(pdir):
+            continue
+        rows = {}
         try:
             import sqlite3
             con = sqlite3.connect(f"file:{os.path.join(mr, 'app.db')}?mode=ro", uri=True)
-            rows = con.execute("SELECT path, name, game_version, mod_loader, mod_loader_version FROM profiles").fetchall()
+            cols = [r[1] for r in con.execute("PRAGMA table_info(profiles)")]
+            pick = lambda *names: next((c for c in names if c in cols), None)
+            want = [pick("path"), pick("name"), pick("game_version"), pick("mod_loader", "loader"), pick("mod_loader_version", "loader_version")]
+            sel = ", ".join(c or "NULL" for c in want)
+            for r in con.execute(f"SELECT {sel} FROM profiles"):
+                if r[0]:
+                    rows[r[0]] = r
             con.close()
-        except Exception:
-            for d in os.listdir(pdir):
-                try:
-                    with open(os.path.join(pdir, d, "profile.json"), encoding="utf-8") as f:
-                        md = json.load(f).get("metadata", {})
-                    lvv = md.get("loader_version")
-                    rows.append((d, md.get("name"), md.get("game_version"), md.get("loader"), lvv.get("id") if isinstance(lvv, dict) else lvv))
-                except (OSError, ValueError):
-                    continue
-        for path, name, mc, loader, lv in rows:
+        except Exception as e:
+            log(f"modrinth app db: {e!r}")
+        for d in os.listdir(pdir):          # folders the database doesn't know about (or older versions with profile.json)
+            if d in rows or not os.path.isdir(os.path.join(pdir, d)):
+                continue
+            name, mc, loader, lvv = d, None, None, None
+            try:
+                with open(os.path.join(pdir, d, "profile.json"), encoding="utf-8") as f:
+                    md = json.load(f).get("metadata", {})
+                name, mc, loader, lvv = md.get("name") or d, md.get("game_version"), md.get("loader"), md.get("loader_version")
+                lvv = lvv.get("id") if isinstance(lvv, dict) else lvv
+            except (OSError, ValueError):
+                pass
+            rows[d] = (d, name, mc, loader, lvv)
+        for path, name, mc, loader, lv in rows.values():
             gdir = os.path.join(pdir, path)
-            if os.path.isdir(gdir):
+            if os.path.isdir(gdir) and os.path.realpath(gdir) not in seen_mr:
+                seen_mr.add(os.path.realpath(gdir))
+                if not mc:
+                    mc, loader2, lv2 = guess_from_mods(gdir)
+                    loader, lv = loader or loader2, lv or lv2
                 found.append(_entry("modrinth", name or path, gdir, mc, (loader or "vanilla").lower(), lv))
     return found
 
 
 def import_launcher_job(task, ids, with_worlds):
-    entries = [_scan_cache[i] for i in ids if i in _scan_cache]
-    done = []
-    task.set_max(len(entries))
-    for n, e in enumerate(entries, 1):
-        if not e["supported"]:
-            continue
-        task.set_status(msg("st.importing", name=e["name"]))
+    """1) copy every instance (they show up right away), 2) install each distinct game version once."""
+    entries = [e for e in (_scan_cache[i] for i in ids if i in _scan_cache) if e["supported"]]
+    done, made = [], []
+    task.set_max(len(entries) * 2)
+    step = 0
+
+    def copy_one(e):
         iid = add_instance(e["name"], e["mc"], e["loader"], None, {"imported_from": e["source"]})
         root = inst_path(iid)
-        try:
-            for item in IMPORT_ITEMS + (["saves"] if with_worlds else []):
-                src = os.path.join(e["path"], item)
-                if os.path.isdir(src):
-                    shutil.copytree(src, os.path.join(root, item), ignore=shutil.ignore_patterns("session.lock", "*.part"),
-                                    dirs_exist_ok=True)
-                elif os.path.isfile(src):
-                    shutil.copy2(src, os.path.join(root, item))
+        for item in IMPORT_ITEMS + (["saves"] if with_worlds else []):
+            src = os.path.join(e["path"], item)
+            if os.path.isdir(src):
+                shutil.copytree(src, os.path.join(root, item), ignore=shutil.ignore_patterns("session.lock", "*.part"),
+                                dirs_exist_ok=True)
+            elif os.path.isfile(src):
+                shutil.copy2(src, os.path.join(root, item))
+        return iid
+
+    task.set_status(msg("st.importing", name=", ".join(e["name"] for e in entries[:3]) + ("…" if len(entries) > 3 else "")))
+    with concurrent.futures.ThreadPoolExecutor(4) as ex:      # copying is disk-bound: a few at once is faster
+        futs = {ex.submit(copy_one, e): e for e in entries}
+        for f in concurrent.futures.as_completed(futs):
+            step += 1
+            task.set_progress(step)
             try:
-                setup_job(task, iid, e["loader_version"])
+                made.append((futs[f], f.result()))
             except Exception:
-                get_inst(iid)["status"] = "installing"
-                setup_job(task, iid, None)  # the exact loader build may be gone — take the latest
-            done.append(e["name"])
+                log(f"import copy failed for {futs[f]['name']}:\n" + traceback.format_exc())
+    push_instances()
+    groups = {}
+    for e, iid in made:
+        groups.setdefault((e["mc"], e["loader"], e["loader_version"]), []).append(iid)
+    for (mc, loader, lv), iids in groups.items():
+        task.set_status(msg("st.importing", name=get_inst(iids[0])["name"]))
+        try:
+            try:
+                vid, lv2 = ensure_version(mc, loader, lv, task)
+            except Exception:
+                vid, lv2 = ensure_version(mc, loader, None, task)   # that exact loader build may be gone — take the latest
+            with lock:
+                for iid in iids:
+                    get_inst(iid).update(version_id=vid, loader_version=lv2, status="ready")
+                save()
+            done += [get_inst(i)["name"] for i in iids]
         except Exception:
-            get_inst(iid)["status"] = "broken"
-            save()
-        task.set_progress(n)
+            log(f"import install failed for {loader} {mc}:\n" + traceback.format_exc())
+            with lock:
+                for iid in iids:
+                    get_inst(iid)["status"] = "broken"
+                save()
+        step += len(iids)
+        task.set_max(len(entries) * 2)
+        task.set_progress(step)
+        push_instances()
     check_achievements()
     return "done.imported_launchers", {"n": len(done)}
 
@@ -3164,6 +3455,9 @@ def launch(iid, server):
             inst["playtime"] = inst.get("playtime", 0) + int(time.time() - started)
             inst["sessions"] = inst.get("sessions", 0) + 1
             save()
+        if time.time() - started > 30:
+            log_session(iid, started, time.time())
+        threading.Thread(target=snapshot_month, daemon=True).start()
         was_stopped = iid in stopped
         stopped.discard(iid)
         push_instances()
@@ -3201,7 +3495,7 @@ class Api:
     def init(self):
         return {"instances": instances_list(), "settings": data["settings"], "servers": data["servers"],
                 "version": VERSION, "ram_total": system_ram_mb(), "ram_recommended": recommended_ram(),
-                "media": MEDIA_BASE, "net": net_status(), "log": os.path.join(BASE, "elytra.log"), "accounts": public_accounts(), "sets": public_sets(),
+                "media": MEDIA_BASE, "net": net_status(), "game": data.get("game", {"best": 0, "plays": 0}), "log": os.path.join(BASE, "elytra.log"), "accounts": public_accounts(), "sets": public_sets(),
                 "pending": [PENDING.pop(0) for _ in range(len(PENDING))],
                 "features": {"ms": ms_enabled(), "license_only": ms_enabled() and LICENSE_ONLY,
                              "discord": bool(DISCORD_CLIENT_ID), "updates": bool(UPDATE_REPO),
@@ -3211,6 +3505,11 @@ class Api:
     def get_versions(self, snapshots=False):
         kinds = ("release", "snapshot") if snapshots else ("release",)
         return [v["id"] for v in mll.utils.get_version_list() if v["type"] in kinds]
+
+    @endpoint
+    def get_all_versions(self):
+        """Every version Mojang lists, from today's releases back to the first alphas."""
+        return [{"id": v["id"], "type": v["type"]} for v in mll.utils.get_version_list()]
 
     @endpoint
     def save_settings(self, s):
@@ -3267,7 +3566,7 @@ class Api:
         inst["status"] = "installing"
         save()
         push_instances()
-        run_task("task.repair", {"name": inst["name"]}, setup_job, iid, inst.get("loader_version"))
+        run_task("task.repair", {"name": inst["name"]}, setup_job, iid, inst.get("loader_version"), True)
 
     @endpoint
     def delete_instance(self, iid):
@@ -3365,6 +3664,32 @@ class Api:
                 inst["content"][item["rel"]] = item["meta"]
             save()
         mark_dirty(iid)
+
+    @endpoint
+    def get_wrapped(self, period=None):
+        return wrapped(period or month_key())
+
+    @endpoint
+    def save_image(self, data_url, name):
+        return save_png(data_url, name)
+
+    @endpoint
+    def game_score(self, score):
+        score = max(0, min(100000, int(score)))
+        with lock:
+            g = data.setdefault("game", {"best": 0, "plays": 0})
+            g["plays"] = g.get("plays", 0) + 1
+            new = score > g.get("best", 0)
+            if new:
+                g["best"] = score
+            save()
+        check_achievements()
+        return {"best": g["best"], "new": new, "plays": g["plays"]}
+
+    @endpoint
+    def toggle_fullscreen(self):
+        if window is not None:
+            window.toggle_fullscreen()
 
     @endpoint
     def set_discord(self, on):
@@ -3911,8 +4236,23 @@ if __name__ == "__main__":
         clean_trash()
     except Exception:
         pass
+    try:
+        seed_ready_versions()
+    except Exception:
+        pass
+    threading.Thread(target=snapshot_month, daemon=True).start()
     HIDDEN.update(on=bool(play_id), shortcut=bool(play_id))
     window = webview.create_window("Elytra", resource(os.path.join("ui", "index.html")), js_api=Api(),
                                    width=1280, height=820, min_size=(1000, 640), background_color="#16181c",
                                    hidden=bool(play_id))
     webview.start(on_start, (window, play_id))
+    # The window is gone. Unfinished downloads would otherwise keep an invisible Elytra running, which then
+    # swallows the next start and keeps Elytra.exe locked. Running games are separate processes and keep going.
+    try:
+        with open(INSTANCE_FILE, encoding="utf-8") as f:
+            if json.load(f).get("pid") == os.getpid():
+                os.remove(INSTANCE_FILE)
+    except Exception:
+        pass
+    log("window closed, exiting")
+    os._exit(0)

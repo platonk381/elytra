@@ -1,0 +1,5 @@
+- Elytra Wrapped — monthly recap with a shareable card
+- Elytra Flight — mini-game while modpacks install
+- Every Minecraft version, back to the first alphas
+- Much faster downloads (keep-alive connections, no double verification)
+- Fixed: closing Elytra during an install left it stuck in the background

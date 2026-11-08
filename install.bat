@@ -48,7 +48,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 set "KEY=HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\Elytra"
 reg add "%KEY%" /v DisplayName /d "Elytra" /f >nul
 reg add "%KEY%" /v DisplayIcon /d "%DEST%\Elytra.exe" /f >nul
-reg add "%KEY%" /v DisplayVersion /d "0.9.0" /f >nul
+reg add "%KEY%" /v DisplayVersion /d "0.10.1" /f >nul
 reg add "%KEY%" /v Publisher /d "Elytra" /f >nul
 reg add "%KEY%" /v InstallLocation /d "%DEST%" /f >nul
 reg add "%KEY%" /v UninstallString /d "\"%DEST%\uninstall.bat\"" /f >nul
