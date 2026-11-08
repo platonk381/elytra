@@ -1,18 +1,18 @@
 {
-  "tag_name": "v0.10.13",
-  "body": "## Elytra 0.10.13\r\n\r\n- Новое: блок «Поддержать Elytra» в Настройках и список поддержавших\r\n- Обновление работает, даже когда GitHub недоступен\r\n",
+  "tag_name": "v0.11.0",
+  "body": "## Elytra 0.11.0\r\n\r\n- Новое: **Друзья онлайн**. У каждого свой код друга. Добавь друга по коду, и будет видно, кто в сети и во что играет\r\n- Кнопка «Позвать» отправляет другу приглашение. Если твой мир открыт через «Играть с другом», он зайдёт в один клик\r\n- Режим «Невидимка», если не хочешь, чтобы видели, что ты в сети\r\n- Всё зашифровано, регистрация не нужна\r\n",
   "assets": [
     {
       "name": "Elytra-Setup.exe",
-      "size": 13949336,
-      "digest": "sha256:5603bfd08a13cab30451fa92ec97ec28a355173f32651d2f458fa8bc1b4edcf3",
-      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.10.13/Elytra-Setup.exe"
+      "size": 13960627,
+      "digest": "sha256:a47c4a930025ee915537d807d6e9d0fe216c3e710fa911fc31a1fc9f77186c3e",
+      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.11.0/Elytra-Setup.exe"
     },
     {
       "name": "Elytra.exe",
-      "size": 14976858,
-      "digest": "sha256:334fa4f733148ac7e8c217fa7c6dcc5f34568cb2bcf6741f418ae82742b9fc1c",
-      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.10.13/Elytra.exe"
+      "size": 14991232,
+      "digest": "sha256:5b45d10f02c6b0280ba842b7ed55c13c450f7bdd6f7616f13725bedfe42039d8",
+      "browser_download_url": "https://github.com/platonk381/elytra/releases/download/v0.11.0/Elytra.exe"
     }
   ]
 }
