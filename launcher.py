@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.11"
+VERSION = "0.10.12"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -2563,12 +2563,29 @@ def active_login():
 
 # ---------------- launcher self-update (GitHub Releases) ----------------
 _update_info = {}
+UPDATE_MIRRORS = ("https://ghfast.top/", "https://gh-proxy.com/", "https://ghproxy.net/")
 
 
 def check_self_update():
     if not UPDATE_REPO:
         return None
-    rel = http_json(f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest")
+    try:
+        rel = http_json(f"https://api.github.com/repos/{UPDATE_REPO}/releases/latest")
+    except Exception as e:
+        # api.github.com is sometimes unreachable (e.g. in Russia): the release info is also published as
+        # latest.json on the website and through the jsDelivr CDN
+        log(f"update check via GitHub API failed ({type(e).__name__}), trying latest.json")
+        rel = None
+        user, repo = UPDATE_REPO.split("/")
+        for u in (f"https://{user}.github.io/{repo}/latest.json", f"https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/docs/latest.json",
+                  f"https://fastly.jsdelivr.net/gh/{UPDATE_REPO}@main/docs/latest.json"):
+            try:
+                rel = http_json(u, 15)
+                break
+            except Exception:
+                continue
+        if rel is None:
+            raise
     tag = rel.get("tag_name", "").lstrip("vV")
     if version_tuple(tag) <= version_tuple(VERSION):
         return None
@@ -2602,13 +2619,37 @@ def apply_self_update_job(task):
     url = _update_info["url"]
     if not url.startswith("https://"):
         raise LauncherError("err.unsafe_url", url=url)
-    h = hashlib.sha256()
-    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=120) as r, open(new, "wb") as f:
-        while chunk := r.read(65536):
-            h.update(chunk)
-            f.write(chunk)
     digest = _update_info.get("digest", "")
-    if digest.startswith("sha256:") and digest[7:].lower() != h.hexdigest():
+    want = digest[7:].lower() if digest.startswith("sha256:") else ""
+    # GitHub's download servers are sometimes unreachable: then try public GitHub download mirrors.
+    # A mirror's file is only accepted when its SHA-256 matches the one GitHub published.
+    cands = [url] + ([m + url for m in UPDATE_MIRRORS] if want else [])
+    last, h = None, None
+    for n, u in enumerate(cands):
+        if n:
+            task.set_status(msg("st.download", name=f"Elytra {_update_info['version']} ({urllib.parse.urlparse(u).hostname})"))
+        try:
+            h = hashlib.sha256()
+            with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60) as r, open(new, "wb") as f:
+                while chunk := r.read(65536):
+                    h.update(chunk)
+                    f.write(chunk)
+            if want and h.hexdigest() != want:
+                last = LauncherError("err.corrupt", file="Elytra.exe")
+                log(f"update download from {urllib.parse.urlparse(u).hostname}: checksum mismatch")
+                continue
+            last = None
+            break
+        except (urllib.error.URLError, OSError, http.client.HTTPException) as e:
+            log(f"update download from {urllib.parse.urlparse(u).hostname} failed: {type(e).__name__}: {e}")
+            last = LauncherError("err.network", host="GitHub")
+    if last:
+        try:
+            os.remove(new)
+        except OSError:
+            pass
+        raise last
+    if want and want != h.hexdigest():
         os.remove(new)
         raise LauncherError("err.corrupt", file="Elytra.exe")
     if is_installed():

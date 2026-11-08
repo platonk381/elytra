@@ -75,3 +75,25 @@ jobs:
           $notes = if (Test-Path RELEASE_NOTES.md) { Get-Content RELEASE_NOTES.md -Raw } else { "Elytra $v" }
           $notes += "`n`n**Elytra-Setup.exe** — installer with shortcuts (recommended). **Elytra.exe** — portable, no install."
           gh release create "v$v" dist/Elytra-Setup.exe dist/Elytra.exe --title "Elytra $v" --notes "$notes"
+
+      - name: Publish latest.json (fallback for the in-app update check)
+        if: steps.v.outputs.skip == 'false'
+        shell: pwsh
+        run: |
+          $v = "${{ steps.v.outputs.version }}"
+          $notes = if (Test-Path RELEASE_NOTES.md) { Get-Content RELEASE_NOTES.md -Raw } else { "Elytra $v" }
+          $assets = @()
+          foreach ($n in @("Elytra-Setup.exe", "Elytra.exe")) {
+            $f = Get-Item "dist/$n"
+            $assets += [ordered]@{ name = $n; size = $f.Length
+              digest = "sha256:" + (Get-FileHash $f.FullName -Algorithm SHA256).Hash.ToLower()
+              browser_download_url = "https://github.com/${{ github.repository }}/releases/download/v$v/$n" }
+          }
+          $obj = [ordered]@{ tag_name = "v$v"; body = $notes; assets = $assets }
+          $obj | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8NoBOM docs/latest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/latest.json
+          git commit -m "latest.json for v$v"
+          git pull --rebase origin main
+          git push origin HEAD:main
