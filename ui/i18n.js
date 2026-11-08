@@ -831,7 +831,10 @@ const I18N = {
   "pack.started": "Building «{name}» — play Elytra Flight while you wait",
   "pack.no_themes": "I didn't get what kind of pack you want. Add a bit more, e.g. “magic and adventure” or “tech with friends”",
   "pack.nothing": "No suitable mods for this version — try another version or description",
-  "done.pack": "«{name}» is ready: {n} mods"
+  "done.pack": "«{name}» is ready: {n} mods",
+  "pack.any_server": "works on any server",
+  "pack.any_server_sub": "Client-side mods only: they add no new blocks or items, so you can join any server with them.",
+  "pack.ex5": "PvP and traps for anarchy servers"
  },
  "ru": {
   "u.gb": "ГБ",
@@ -1664,7 +1667,10 @@ const I18N = {
   "pack.started": "Собираю «{name}» — можно пока поиграть в Elytra Flight",
   "pack.no_themes": "Не понял, какую сборку ты хочешь. Напиши подробнее, например: «магия и приключения» или «техника с друзьями»",
   "pack.nothing": "Не нашлось подходящих модов для этой версии — попробуй другую версию или описание",
-  "done.pack": "Сборка «{name}» готова: {n} модов"
+  "done.pack": "Сборка «{name}» готова: {n} модов",
+  "pack.any_server": "работает на любых серверах",
+  "pack.any_server_sub": "Тут только клиентские моды: они не добавляют новых блоков и предметов, поэтому с ними можно заходить на любые серверы.",
+  "pack.ex5": "PvP и ловушки для анархии"
  },
  "uk": {
   "u.gb": "ГБ",
@@ -2497,7 +2503,10 @@ const I18N = {
   "pack.started": "Збираю «{name}» — можна поки пограти в Elytra Flight",
   "pack.no_themes": "Не зрозумів, яку збірку ти хочеш. Напиши детальніше, наприклад: «магія й пригоди» або «техніка з друзями»",
   "pack.nothing": "Не знайшлося модів для цієї версії — спробуй іншу версію або опис",
-  "done.pack": "Збірка «{name}» готова: {n} модів"
+  "done.pack": "Збірка «{name}» готова: {n} модів",
+  "pack.any_server": "працює на будь-яких серверах",
+  "pack.any_server_sub": "Тут лише клієнтські моди: вони не додають нових блоків і предметів, тож із ними можна заходити на будь-які сервери.",
+  "pack.ex5": "PvP і пастки для анархії"
  },
  "de": {
   "u.gb": "GB",
@@ -3330,7 +3339,10 @@ const I18N = {
   "pack.started": "Baue «{name}» — spiel solange Elytra Flight",
   "pack.no_themes": "Ich habe nicht verstanden, welches Pack du willst. Schreib etwas mehr, z. B. „Magie und Abenteuer“ oder „Technik mit Freunden“",
   "pack.nothing": "Keine passenden Mods für diese Version — versuch eine andere Version oder Beschreibung",
-  "done.pack": "«{name}» ist bereit: {n} Mods"
+  "done.pack": "«{name}» ist bereit: {n} Mods",
+  "pack.any_server": "funktioniert auf jedem Server",
+  "pack.any_server_sub": "Nur Client-Mods: Sie fügen keine neuen Blöcke oder Items hinzu, damit kannst du jedem Server beitreten.",
+  "pack.ex5": "PvP und Fallen für Anarchie-Server"
  },
  "es": {
   "u.gb": "GB",
@@ -4163,6 +4175,9 @@ const I18N = {
   "pack.started": "Creando «{name}»: juega a Elytra Flight mientras esperas",
   "pack.no_themes": "No entendí qué pack quieres. Escribe un poco más, p. ej. «magia y aventura» o «tecnología con amigos»",
   "pack.nothing": "No hay mods adecuados para esta versión: prueba otra versión o descripción",
-  "done.pack": "«{name}» está lista: {n} mods"
+  "done.pack": "«{name}» está lista: {n} mods",
+  "pack.any_server": "funciona en cualquier servidor",
+  "pack.any_server_sub": "Solo mods de cliente: no añaden bloques ni objetos nuevos, así que puedes entrar a cualquier servidor.",
+  "pack.ex5": "PvP y trampas para servidores anarquía"
  }
 };

@@ -1,6 +1,6 @@
 /* Elytra 0.12 — build an instance from a description ("horror survival with magic for a weak PC") */
 let PACK = null, packText = "";
-const PACK_EXAMPLES = ["pack.ex1", "pack.ex2", "pack.ex3", "pack.ex4"];
+const PACK_EXAMPLES = ["pack.ex1", "pack.ex5", "pack.ex2", "pack.ex3", "pack.ex4"];
 
 function openDescribe(text) {
   PACK = null;
@@ -34,16 +34,17 @@ function showPlan() {
   const groups = {};
   p.mods.forEach(m => (groups[m.reason] = groups[m.reason] || []).push(m));
   const order = [...p.themes, "friends", "map", "shaders", "qol", "perf"].filter(k => groups[k]);
+  const anyNote = p.client_only ? `<p class="hint">${ico("shield")}${T("pack.any_server_sub")}</p>` : "";
   const on = p.mods.filter(m => !PACK.off.has(m.id)).length;
   modal(`<div class="doc-head"><div class="di magic">✨</div><div style="flex:1;min-width:0"><input class="input packname" id="packName" maxlength="60" value="${esc(p.name)}">
       <div class="packmeta"><span class="tag">${esc(loaderName(p.loader))} ${esc(p.mc)}</span>${p.themes.map(th => `<span class="tag th">${esc(L[th] || th)}</span>`).join("")}
-        ${p.flags.includes("weak") ? `<span class="tag">⚡ ${T("pack.weak")}</span>` : ""}${p.shaders.length ? `<span class="tag">🌅 ${esc(L.shaders || "Shaders")}</span>` : ""}</div></div>
+        ${p.flags.includes("weak") ? `<span class="tag">⚡ ${T("pack.weak")}</span>` : ""}${p.client_only ? `<span class="tag">🛡 ${T("pack.any_server")}</span>` : ""}${p.shaders.length ? `<span class="tag">🌅 ${esc(L.shaders || "Shaders")}</span>` : ""}</div></div>
       <button class="btn icon ghost" onclick="closeModal()">${ico("x")}</button></div>
     <div class="packlist">${order.map(k => `<div class="packgroup"><b>${esc(L[k] || k)}</b>${groups[k].map(m => `
       <label class="packmod ${PACK.off.has(m.id) ? "off" : ""}"><input type="checkbox" ${PACK.off.has(m.id) ? "" : "checked"} onchange='packToggle(${jsArg(m.id)}, this)'>
         <span class="packico">${icon(m.icon, m.title)}</span><div><b>${esc(m.title || m.slug)}</b><small>${esc(m.desc || "")}</small></div>
         ${m.downloads ? `<span class="dl">${ico("download")}${fmt(m.downloads)}</span>` : ""}</label>`).join("")}</div>`).join("")}</div>
-    <p class="hint">${ico("info")}${T("pack.deps_note")}${p.dropped ? " " + t("pack.dropped", {n: p.dropped}) : ""}</p>
+    ${anyNote}<p class="hint">${ico("info")}${T("pack.deps_note")}${p.dropped ? " " + t("pack.dropped", {n: p.dropped}) : ""}</p>
     <div class="foot"><button class="btn" onclick="openDescribe()">${ico("edit")}${T("pack.change")}</button>
       <button class="btn brand" id="packCreate" onclick="packCreate()">${ico("plus")}${T("pack.create", {n: on})}</button></div>`, true);
 }

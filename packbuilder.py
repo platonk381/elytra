@@ -24,8 +24,16 @@ THEMES = {
              "cats": ["food"], "q": [""], "pick": {"fabric": ["farmers-delight-refabricated"], "forge": ["farmers-delight"]}},
     "mobs": {"w": ["моб", "животн", "дракон", "звер", "существ", "тварин", "mob", "animal", "dragon", "creature", "beast", "tier", "drache", "animal", "dragón"],
              "cats": ["mobs"], "q": [""], "pick": {}},
-    "combat": {"w": ["оруж", "меч ", "мечи", "мечом", "мечей", "мечах", "бои", "бой", "битв", "сраж", "пвп", "зброя", "weapon", "sword", "combat", "fight", "pvp", "waffe", "kampf", "arma", "combate"],
+    "combat": {"w": ["оруж", "меч ", "мечи", "мечом", "мечей", "мечах", "битв", "сраж", "зброя", "weapon", "sword", "fight", "waffe", "arma"],
                "cats": ["equipment"], "q": ["", "combat"], "pick": {}},
+    # client-side themes: only mods that work on any server (no new blocks or items)
+    "pvp": {"w": ["пвп", "pvp", "пвпш", "дуэл", "анарх", "кристал", "бедвар", "скайвар", "кит пвп", "мини-игр", "миниигр", "хайпиксел", "duel", "anarchy", "crystal", "bedwars", "skywars", "hypixel", "minigame", "combat"],
+            "cats": [], "q": ["pvp", "hud", "zoom"], "client": True,
+            "pick": {"fabric": ["zoomify", "betterf3", "shulkerboxtooltip", "inventory-profiles-next", "gamma-utils", "freelook", "status-effect-bars", "armor-hud", "cps-display"],
+                     "forge": ["zoomify", "betterf3", "shulkerboxtooltip", "inventory-profiles-next", "freelook"]}},
+    "trap": {"w": ["трап", "ловуш", "редстоун", "редстон", "механизм", "схем", "литематик", "trap", "redstone", "contraption", "schematic", "litematica"],
+             "cats": [], "q": ["redstone", "schematic", "placement"], "client": True,
+             "pick": {"fabric": ["litematica", "tweakeroo", "minihud", "item-scroller", "freecam"], "forge": ["freecam"]}},
     "rpg": {"w": ["рпг", "класс", "навык", "прокач", "уровн", "скилл", "rpg", "skill", "level", "class"],
             "cats": ["game-mechanics"], "q": ["rpg", "skills"], "pick": {}},
     "hardcore": {"w": ["хардкор", "сложн", "реализм", "реалист", "тяжел", "жорстк", "hardcore", "realis", "difficult", "hard mode", "schwer", "difícil"],
@@ -42,23 +50,23 @@ THEMES = {
 LABELS = {  # shown to the player
     "ru": {"horror": "Хоррор", "magic": "Магия", "tech": "Техника", "adventure": "Приключения", "world": "Новые миры", "build": "Строительство",
            "food": "Еда и фермы", "mobs": "Мобы", "combat": "Оружие и бой", "rpg": "RPG", "hardcore": "Хардкор", "space": "Космос",
-           "storage": "Хранение", "transport": "Транспорт", "cozy": "Уют", "perf": "FPS", "qol": "Удобство", "friends": "С друзьями",
+           "storage": "Хранение", "transport": "Транспорт", "cozy": "Уют", "pvp": "PvP", "trap": "Ловушки и редстоун", "perf": "FPS", "qol": "Удобство", "friends": "С друзьями",
            "map": "Карта", "shaders": "Шейдеры"},
     "uk": {"horror": "Хорор", "magic": "Магія", "tech": "Техніка", "adventure": "Пригоди", "world": "Нові світи", "build": "Будівництво",
            "food": "Їжа і ферми", "mobs": "Моби", "combat": "Зброя і бій", "rpg": "RPG", "hardcore": "Хардкор", "space": "Космос",
-           "storage": "Зберігання", "transport": "Транспорт", "cozy": "Затишок", "perf": "FPS", "qol": "Зручність", "friends": "З друзями",
+           "storage": "Зберігання", "transport": "Транспорт", "cozy": "Затишок", "pvp": "PvP", "trap": "Пастки й редстоун", "perf": "FPS", "qol": "Зручність", "friends": "З друзями",
            "map": "Мапа", "shaders": "Шейдери"},
     "en": {"horror": "Horror", "magic": "Magic", "tech": "Tech", "adventure": "Adventure", "world": "New worlds", "build": "Building",
            "food": "Food & farming", "mobs": "Mobs", "combat": "Weapons & combat", "rpg": "RPG", "hardcore": "Hardcore", "space": "Space",
-           "storage": "Storage", "transport": "Transport", "cozy": "Cozy", "perf": "FPS", "qol": "Quality of life", "friends": "With friends",
+           "storage": "Storage", "transport": "Transport", "cozy": "Cozy", "pvp": "PvP", "trap": "Traps & redstone", "perf": "FPS", "qol": "Quality of life", "friends": "With friends",
            "map": "Map", "shaders": "Shaders"},
     "de": {"horror": "Horror", "magic": "Magie", "tech": "Technik", "adventure": "Abenteuer", "world": "Neue Welten", "build": "Bauen",
            "food": "Essen & Farmen", "mobs": "Mobs", "combat": "Waffen & Kampf", "rpg": "RPG", "hardcore": "Hardcore", "space": "Weltraum",
-           "storage": "Lager", "transport": "Transport", "cozy": "Gemütlich", "perf": "FPS", "qol": "Komfort", "friends": "Mit Freunden",
+           "storage": "Lager", "transport": "Transport", "cozy": "Gemütlich", "pvp": "PvP", "trap": "Fallen & Redstone", "perf": "FPS", "qol": "Komfort", "friends": "Mit Freunden",
            "map": "Karte", "shaders": "Shader"},
     "es": {"horror": "Terror", "magic": "Magia", "tech": "Tecnología", "adventure": "Aventura", "world": "Mundos nuevos", "build": "Construcción",
            "food": "Comida y granjas", "mobs": "Mobs", "combat": "Armas y combate", "rpg": "RPG", "hardcore": "Hardcore", "space": "Espacio",
-           "storage": "Almacenaje", "transport": "Transporte", "cozy": "Acogedor", "perf": "FPS", "qol": "Comodidad", "friends": "Con amigos",
+           "storage": "Almacenaje", "transport": "Transporte", "cozy": "Acogedor", "pvp": "PvP", "trap": "Trampas y redstone", "perf": "FPS", "qol": "Comodidad", "friends": "Con amigos",
            "map": "Mapa", "shaders": "Shaders"},
 }
 FLAGS = {
@@ -82,7 +90,8 @@ SHADER = "complementary-reimagined"
 # one mod per group is enough (keyword in the slug)
 GROUPS = [("jei", "roughly-enough-items", "emi"), ("xaeros-minimap", "journeymap", "voxelmap", "ftb-chunks"),
           ("sodium", "embeddium", "rubidium", "optifine", "optifabric"), ("iris", "oculus"), ("jade", "wthit", "hwyla", "the-one-probe"),
-          ("farmers-delight",), ("create",)]
+          ("farmers-delight",), ("create",), ("zoomify", "ok-zoomer", "logical-zoom", "wi-zoom"), ("freelook", "perspective"),
+          ("gamma-utils", "fullbright", "brightness"), ("inventory-profiles-next", "inventory-sorter", "mouse-wheelie")]
 SKIP_CATS = {"library"}
 CANDIDATES = {"fabric": ["1.21.1", "1.20.1"], "forge": ["1.20.1"]}
 
@@ -122,8 +131,10 @@ class Builder:
         self.api, self.log = api, log
         self.versions = versions   # release versions known to exist (for validating a version from the text)
 
-    def search(self, query, cats, mc, loader, limit=12):
+    def search(self, query, cats, mc, loader, limit=12, client=False):
         facets = [["project_type:mod"], [f"versions:{mc}"], [f"categories:{loader}"]]
+        if client:   # works on any server: needed on the client, not required on the server
+            facets += [["client_side:required", "client_side:optional"], ["server_side:optional", "server_side:unsupported"]]
         if cats:
             facets.append([f"categories:{c}" for c in cats])
         try:
@@ -136,7 +147,7 @@ class Builder:
     def theme_hits(self, theme, mc, loader):
         th, out = THEMES[theme], []
         for q in th["q"]:
-            out += self.search(q, th["cats"], mc, loader)
+            out += self.search(q, th["cats"], mc, loader, client=th.get("client", False))
         return out
 
     def score_target(self, themes, mc, loader):
@@ -159,8 +170,9 @@ class Builder:
             loader = "fabric"
         if not themes and not ({"shaders", "friends", "map", "weak"} & set(p["flags"])):
             return {"error": "pack.no_themes"}
-        # pick version + loader when the text doesn't say
-        loaders = [loader] if loader else ["fabric", "forge"]
+        client_only = bool(themes) and all(THEMES[t].get("client") for t in themes)
+        # pick version + loader when the text doesn't say (client-side helpers live mostly on Fabric)
+        loaders = [loader] if loader else (["fabric"] if client_only else ["fabric", "forge"])
         targets = [(lo, v) for lo in loaders for v in ([mc] if mc else CANDIDATES[lo])]
         best, best_hits = None, {}
         if themes:
@@ -174,7 +186,7 @@ class Builder:
         else:
             best = targets[0]
         loader, mc = best
-        size = SIZES[p["size"]]
+        size = SIZES[p["size"]] if not client_only else min(SIZES[p["size"]], 6)
         weak, flags = "weak" in p["flags"], set(p["flags"])
         picked, groups, seen = [], set(), set()
 
@@ -201,9 +213,10 @@ class Builder:
 
         for slug in (PERF_LIGHT if not weak else PERF)[loader]:
             take(slug, "perf", True)
-        for slug in BASE_QOL[loader][: 2 if p["size"] == "small" else 5]:
+        qol = ["modmenu", "mouse-tweaks"] if client_only else BASE_QOL[loader]
+        for slug in qol[: 2 if p["size"] == "small" else 5]:
             take(slug, "qol", True)
-        if "friends" in flags:
+        if "friends" in flags and not client_only:
             for slug in FRIENDS:
                 take(slug, "friends", True)
         if "map" in flags:
@@ -232,7 +245,8 @@ class Builder:
                             progress = True
                             break
         shaders = [SHADER] if "shaders" in flags and not weak else []
-        return {"mc": mc, "loader": loader, "themes": themes, "flags": sorted(flags), "size": p["size"], "mods": picked, "shaders": shaders}
+        return {"mc": mc, "loader": loader, "themes": themes, "flags": sorted(flags), "size": p["size"], "mods": picked, "shaders": shaders,
+                "client_only": client_only}
 
     def check(self, plan):
         """Resolve sure-picks to real projects, drop what has no version for this game, and drop
