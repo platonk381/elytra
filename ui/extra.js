@@ -125,6 +125,7 @@ function paletteEntries(q) {
   add("plus", t("nav.new"), t("pal.action"), openCreate);
   add(streamer() ? "eye" : "eye-off", t("str.title"), t("pal.action"), toggleStreamer);
   add("users", t("fr.join_title"), t("pal.action"), joinByAddress);
+  add("users", t("fr2.title"), t("pal.action"), openFriends);
   S.sets.forEach(st => add("layers", t("pal.set", {name: st.name}), t("set2.count", {n: st.items.length}), () => applySetPick(st.id)));
   add("upload", t("lib.import"), t("pal.action"), importPack);
   add("restore", t("im.btn"), t("pal.action"), openImport);

@@ -105,6 +105,7 @@ function renderChrome() {
   $("#nickLabel").textContent = streamer() ? t("str.hidden") : nick;
   $("#avatar").style.display = streamer() ? "none" : "";
   $("#strBtn").innerHTML = streamerBtn();
+  if ($("#frBtn") && typeof friendsChip === "function") $("#frBtn").innerHTML = friendsChip();
   const av = skinUrl(nick);
   if ($("#avatar").dataset.u !== av) { $("#avatar").dataset.u = av; $("#avatar").style.backgroundImage = `url('${av}'),url('${av}')`; }
   $("#railInst").innerHTML = S.instances.slice(0, 4).map(i =>
@@ -895,6 +896,7 @@ window.onLauncherEvent = (type, d) => {
   else if (type === "self_update") { S.selfUpdate = d; toast(t("self.available", {v: d.version}), "ok"); if (["home", "settings"].includes(S.page) && !$("#modal").classList.contains("open")) render(); }
   else if (type === "net") { S.net = d; drawNet(); }
   else if (type === "support") onSupport(d);
+  else if (type === "friends" || type === "friend_request" || type === "friend_invite") onFriendsEvent(type, d);
   else if (type === "content_changed" && S.page === "instance" && S.current === d.id && S.itab === "content") loadContent();
 };
 

@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.13"
+VERSION = "0.11.0"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -822,6 +822,216 @@ def support_poller():
                 emit("support", {"msgs": support_public(data["support"]), "unread": support_unread(), "new": True})
         except Exception:
             pass
+
+
+# ---------------- friends online (presence through ntfy.sh, encrypted with keys derived from friend codes) ----------------
+CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+_fr_live = {}          # friend code -> last presence {name, st, inst, mc, loader, join, ts}
+_fr_sent = {"sig": None, "at": 0}
+
+
+def ntfy_base():
+    try:
+        return (support_cfg() or {}).get("ntfy") or "https://ntfy.sh"
+    except Exception:
+        return "https://ntfy.sh"
+
+
+def social():
+    with lock:
+        s = data.setdefault("social", {})
+        if not s.get("code"):
+            s.update(code="".join(secrets.choice(CODE_ABC) for _ in range(8)), friends={}, requests={},
+                     invisible=False, since="12h")
+            save()
+        s.setdefault("friends", {}); s.setdefault("requests", {})
+        return s
+
+
+def norm_code(x):
+    c = re.sub(r"[^A-Z0-9]", "", str(x or "").upper())
+    return c if len(c) == 8 and all(ch in CODE_ABC for ch in c) else ""
+
+
+def fr_topic(code, kind):
+    return f"elytra-{kind}-" + hashlib.sha256(f"elytra-{kind}-{code}".encode()).hexdigest()[:28]
+
+
+def fr_key(code, kind):
+    return hashlib.sha256(f"elytra-key-{kind}-{code}".encode()).digest()
+
+
+def sym_seal(obj, key):
+    plain = zlib.compress(json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode(), 9)
+    nonce = os.urandom(16)
+    ek, mk = hmac.new(key, b"enc", hashlib.sha256).digest(), hmac.new(key, b"mac", hashlib.sha256).digest()
+    ct = bytes(a ^ b for a, b in zip(plain, _box_stream(ek, nonce, len(plain))))
+    tag = hmac.new(mk, nonce + ct, hashlib.sha256).digest()[:16]
+    return "S1." + base64.urlsafe_b64encode(nonce + tag + ct).decode().rstrip("=")
+
+
+def sym_open(s, key):
+    if not str(s).startswith("S1."):
+        raise ValueError("format")
+    raw = base64.urlsafe_b64decode(s[3:] + "=" * (-len(s[3:]) % 4))
+    nonce, tag, ct = raw[:16], raw[16:32], raw[32:]
+    ek, mk = hmac.new(key, b"enc", hashlib.sha256).digest(), hmac.new(key, b"mac", hashlib.sha256).digest()
+    if not hmac.compare_digest(hmac.new(mk, nonce + ct, hashlib.sha256).digest()[:16], tag):
+        raise ValueError("tag")
+    return json.loads(zlib.decompress(bytes(a ^ b for a, b in zip(ct, _box_stream(ek, nonce, len(ct))))))
+
+
+def my_name():
+    acc = next((a for a in data["accounts"] if a["id"] == data["settings"].get("account")), None)
+    return (acc["name"] if acc else data["settings"].get("nick", "Player"))[:32]
+
+
+def fr_post(topic, obj, key, timeout=15):
+    req = urllib.request.Request(f"{ntfy_base()}/{topic}", data=sym_seal(obj, key).encode(), headers=UA, method="POST")
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        r.read()
+
+
+def fr_send(code, obj):
+    """Message to a friend's inbox (only holders of that friend code can read it)."""
+    fr_post(fr_topic(code, "i"), dict(obj, code=social()["code"], name=my_name(), ts=int(time.time())), fr_key(code, "i"))
+
+
+def my_presence():
+    for iid in list(running):
+        inst = data["instances"].get(iid)
+        if inst:
+            return {"st": "playing", "inst": inst["name"][:40], "mc": inst["mc"], "loader": inst["loader"],
+                    "join": friend_links.get(iid, "")}
+    return {"st": "online", "inst": "", "mc": "", "loader": "", "join": ""}
+
+
+def fr_publish(force=False, offline=False):
+    s = social()
+    if s.get("invisible") and not offline:
+        return
+    p = {"st": "off", "inst": "", "mc": "", "loader": "", "join": ""} if offline else my_presence()
+    sig = json.dumps(p, sort_keys=True)
+    if not force and sig == _fr_sent["sig"] and time.time() - _fr_sent["at"] < 240:
+        return
+    fr_post(fr_topic(s["code"], "p"), dict(p, name=my_name(), ts=int(time.time())), fr_key(s["code"], "p"), timeout=4 if offline else 15)
+    _fr_sent.update(sig=sig, at=time.time())
+
+
+def fr_poll(since=None, codes=None):
+    """One request for all friends' presence topics plus our own inbox."""
+    s = social()
+    friends = list(codes if codes is not None else s["friends"].keys())
+    topics = {fr_topic(c, "p"): ("p", c) for c in friends}
+    if codes is None:
+        topics[fr_topic(s["code"], "i")] = ("i", s["code"])
+    if not topics:
+        return False
+    url = f"{ntfy_base()}/{','.join(topics)}/json?poll=1&since={since or s.get('since') or '12h'}"
+    with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=20) as r:
+        raw = r.read().decode("utf-8", "replace")
+    changed, last = False, None
+    for line in raw.splitlines():
+        try:
+            ev = json.loads(line)
+        except ValueError:
+            continue
+        if ev.get("event") != "message" or ev.get("topic") not in topics:
+            continue
+        last = ev.get("id") or last
+        kind, code = topics[ev["topic"]]
+        try:
+            m = sym_open(ev.get("message", ""), fr_key(code, kind))
+        except Exception:
+            continue
+        if kind == "p":
+            old = _fr_live.get(code)
+            if not old or m.get("ts", 0) >= old.get("ts", 0):
+                _fr_live[code] = {k: m.get(k, "") for k in ("name", "st", "inst", "mc", "loader", "join")} | {"ts": int(m.get("ts") or 0)}
+                with lock:
+                    if code in s["friends"] and m.get("name"):
+                        s["friends"][code]["name"] = str(m["name"])[:32]
+                changed = True
+        else:
+            changed |= fr_inbox(m)
+    if last and codes is None:
+        with lock:
+            s["since"] = last
+            save()
+    return changed
+
+
+def fr_inbox(m):
+    s = social()
+    code, name, t = norm_code(m.get("code")), str(m.get("name", ""))[:32], m.get("t")
+    if not code or code == s["code"] or time.time() - (m.get("ts") or 0) > 3 * 86400:
+        return False
+    with lock:
+        if t == "req":
+            if code in s["friends"]:
+                return False
+            if code not in s["requests"]:
+                s["requests"][code] = {"name": name, "ts": int(m.get("ts") or time.time())}
+                save()
+                emit("friend_request", {"code": fmt_code(code), "name": name})
+                return True
+            return False
+        if t == "accept" and code in s["friends"]:
+            s["friends"][code]["name"] = name or s["friends"][code].get("name", "")
+            s["friends"][code]["mutual"] = True
+            save()
+            return True
+    if t == "invite" and code in s["friends"] and time.time() - (m.get("ts") or 0) < 1800:
+        emit("friend_invite", {"code": fmt_code(code), "name": name, "inst": str(m.get("inst", ""))[:40], "mc": str(m.get("mc", ""))[:16],
+                               "loader": str(m.get("loader", ""))[:16], "join": str(m.get("join", ""))[:120]})
+    return False
+
+
+def fmt_code(c):
+    return f"{c[:4]}-{c[4:]}"
+
+
+def friends_state():
+    s = social()
+    now = time.time()
+    out = []
+    for code, f in s["friends"].items():
+        live = _fr_live.get(code) or {}
+        online = bool(live) and live.get("st") != "off" and now - live.get("ts", 0) < 420
+        out.append({"code": fmt_code(code), "name": live.get("name") or f.get("name") or fmt_code(code), "online": online,
+                    "st": live.get("st") if online else "off", "inst": live.get("inst", "") if online else "",
+                    "mc": live.get("mc", "") if online else "", "loader": live.get("loader", "") if online else "",
+                    "join": live.get("join", "") if online else "", "seen": live.get("ts", 0)})
+    out.sort(key=lambda x: (not x["online"], x["st"] != "playing", x["name"].lower()))
+    return {"code": fmt_code(s["code"]), "friends": out, "invisible": bool(s.get("invisible")),
+            "requests": [{"code": fmt_code(c), "name": r.get("name", "")} for c, r in s["requests"].items()]}
+
+
+def friends_loop():
+    time.sleep(5)
+    n = 0
+    while True:
+        try:
+            fr_publish()
+        except Exception:
+            pass
+        try:
+            if fr_poll():
+                emit("friends", friends_state())
+            elif n % 4 == 0:
+                emit("friends", friends_state())      # online/offline changes by time
+        except Exception:
+            pass
+        n += 1
+        time.sleep(40)
+
+
+def friends_offline():
+    try:
+        if not social().get("invisible"):
+            fr_publish(offline=True)
+    except Exception:
+        pass
 
 
 def copy_text(text):
@@ -4175,6 +4385,70 @@ class Api:
         return {"copied": copied, "text": text}
 
     @endpoint
+    def friends_get(self):
+        return friends_state()
+
+    @endpoint
+    def friend_add(self, code):
+        c = norm_code(code)
+        s = social()
+        if not c:
+            raise LauncherError("fr2.bad_code")
+        if c == s["code"]:
+            raise LauncherError("fr2.self")
+        with lock:
+            accepted = c in s["requests"]
+            s["requests"].pop(c, None)
+            s["friends"].setdefault(c, {"name": "", "added": int(time.time()), "mutual": accepted})
+            save()
+        try:
+            fr_send(c, {"t": "accept" if accepted else "req"})
+            fr_publish(force=True)
+            fr_poll(since="12h", codes=[c])
+        except (urllib.error.URLError, OSError) as e:
+            log(f"friend add network: {type(e).__name__}")
+        return friends_state()
+
+    @endpoint
+    def friend_decline(self, code):
+        c = norm_code(code)
+        with lock:
+            social()["requests"].pop(c, None)
+            save()
+        return friends_state()
+
+    @endpoint
+    def friend_remove(self, code):
+        c = norm_code(code)
+        with lock:
+            social()["friends"].pop(c, None)
+            save()
+        _fr_live.pop(c, None)
+        return friends_state()
+
+    @endpoint
+    def friend_invite(self, code):
+        c = norm_code(code)
+        if c not in social()["friends"]:
+            raise LauncherError("err.not_found")
+        try:
+            fr_send(c, dict(my_presence(), t="invite"))
+        except (urllib.error.URLError, OSError):
+            raise LauncherError("err.network", host="ntfy.sh")
+        return True
+
+    @endpoint
+    def friends_invisible(self, on):
+        with lock:
+            social()["invisible"] = bool(on)
+            save()
+        try:
+            fr_publish(force=True, offline=bool(on))
+        except Exception:
+            pass
+        return friends_state()
+
+    @endpoint
     def get_donate(self):
         return donate_info()
 
@@ -4727,6 +5001,7 @@ def write_instance_file():
         except Exception:
             pass
     atexit.register(cleanup)
+    atexit.register(friends_offline)
 
 
 if __name__ == "__main__":
@@ -4749,6 +5024,7 @@ if __name__ == "__main__":
     log(f"Elytra {VERSION} start, python {sys.version.split()[0]}")
     probe_network()
     threading.Thread(target=support_poller, daemon=True).start()
+    threading.Thread(target=friends_loop, daemon=True).start()
     start_media_server()
     write_instance_file()
     try:
@@ -4774,4 +5050,7 @@ if __name__ == "__main__":
     except Exception:
         pass
     log("window closed, exiting")
+    t = threading.Thread(target=friends_offline, daemon=True)
+    t.start()
+    t.join(3)
     os._exit(0)
