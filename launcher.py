@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -3316,6 +3316,32 @@ def template_job(task, iid, tpl):
     return result
 
 
+# ---------------- build an instance from a description (packbuilder.py) ----------------
+def pack_build_job(task, iid, mods, shaders, weak):
+    result = setup_job(task, iid)
+    ins = Installer(task, iid)
+    failed = []
+    for pid in mods:
+        try:
+            ins.one(pid, "mod", optional=True)
+        except LauncherError:
+            failed.append(pid)
+        except Exception as e:
+            log(f"pack mod {pid}: {type(e).__name__}: {e}")
+            failed.append(pid)
+    for slug in shaders:
+        try:
+            ins.one(slug, "shader", optional=True)
+        except Exception:
+            pass
+    with lock:
+        inst = get_inst(iid)
+        inst["boosted"] = bool(weak) or inst.get("boosted", False)
+        save()
+    log(f"pack built: {len(ins.installed)} installed, {len(failed)} failed")
+    return "done.pack", {"name": get_inst(iid)["name"], "n": len(ins.installed)}
+
+
 # ---------------- clone ----------------
 def clone_job(task, iid, name, with_worlds):
     src = get_inst(iid)
@@ -4223,6 +4249,34 @@ class Api:
             run_task("task.create", {"name": name}, template_job, iid, template)
         else:
             run_task("task.create", {"name": name}, setup_job, iid)
+        return iid
+
+    @endpoint
+    def pack_plan(self, text, mc=None, loader=None):
+        import packbuilder
+        text = str(text or "")[:600]
+        b = packbuilder.Builder(api, log=log)
+        plan = b.plan(text, mc or None, loader or None)
+        if plan.get("error"):
+            raise LauncherError(plan["error"])
+        plan = b.check(plan)
+        if not plan["mods"]:
+            raise LauncherError("pack.nothing")
+        lang = data["settings"].get("lang", "en")
+        labels = packbuilder.LABELS.get(lang, packbuilder.LABELS["en"])
+        plan["labels"] = labels
+        plan["name"] = " + ".join(labels.get(t, t) for t in plan["themes"][:3]) or labels.get("perf", "Elytra")
+        return plan
+
+    @endpoint
+    def pack_create(self, name, mc, loader, mods, shaders=None, weak=False):
+        name = str(name or "").strip()[:60] or "Elytra"
+        if loader not in ("fabric", "forge", "quilt") or not re.fullmatch(r"[\w.\-]{3,20}", str(mc)):
+            raise LauncherError("err.generic", msg="bad target")
+        mods = [str(m) for m in (mods or []) if re.fullmatch(r"[\w.\-]{2,64}", str(m))][:80]
+        shaders = [str(x) for x in (shaders or []) if re.fullmatch(r"[\w.\-]{2,64}", str(x))][:3]
+        iid = add_instance(name, mc, loader)
+        run_task("task.create", {"name": name}, pack_build_job, iid, mods, shaders, weak)
         return iid
 
     @endpoint

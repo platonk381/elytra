@@ -123,6 +123,7 @@ function paletteEntries(q) {
   });
   S.servers.forEach(s => add("server", t("pal.join", {name: s.name}), mask(s.address), () => joinServer(s.id)));
   add("plus", t("nav.new"), t("pal.action"), openCreate);
+  add("zap", t("pack.btn"), t("pal.action"), () => openDescribe());
   add(streamer() ? "eye" : "eye-off", t("str.title"), t("pal.action"), toggleStreamer);
   add("users", t("fr.join_title"), t("pal.action"), joinByAddress);
   add("users", t("fr2.title"), t("pal.action"), openFriends);

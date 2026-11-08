@@ -5,7 +5,7 @@ name: Build & release
 on:
   push:
     branches: [main]
-    paths: ["launcher.py", "ui/**", "icon.ico", "installer.iss", ".github/workflows/release.yml"]
+    paths: ["launcher.py", "packbuilder.py", "ui/**", "icon.ico", "installer.iss", ".github/workflows/release.yml"]
   workflow_dispatch:
 
 permissions:

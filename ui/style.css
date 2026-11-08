@@ -898,3 +898,31 @@ body.aurora .fl-box{background:rgba(30,22,58,.9);backdrop-filter:blur(30px);bord
 .frfoot{display:flex;gap:12px;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.06)}
 .frfoot small{display:block;color:var(--muted)}
 .frtoast{display:flex;align-items:center;gap:10px}.frtoast b{flex:1}
+
+/* build from a description */
+.magicbtn{background:linear-gradient(135deg,rgba(139,92,246,.35),rgba(236,72,153,.35));border:1px solid rgba(236,72,153,.45);color:#fff}
+.magicbtn:hover{filter:brightness(1.15)}
+.doc-head .di.magic{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff;font-size:24px}
+.magicbanner{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:0 0 16px;padding:12px 14px;border-radius:14px;border:1px solid rgba(236,72,153,.35);
+  background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(236,72,153,.14));color:var(--text);font:inherit;cursor:pointer}
+.magicbanner span{font-size:22px}.magicbanner div{flex:1}.magicbanner b{color:var(--contrast);display:block}.magicbanner small{color:var(--muted)}
+.magicbanner:hover{filter:brightness(1.12)}
+.packtext{width:100%;resize:vertical;min-height:84px;font:inherit;font-size:15px;line-height:1.45;padding:14px 16px}
+.packex{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.packtips{display:flex;gap:8px;align-items:flex-start;color:var(--muted);font-size:12.5px;margin-top:4px}.packtips .i{flex:none;width:15px;height:15px;margin-top:2px}
+.packname{width:100%;font-size:18px;font-weight:800;color:var(--contrast);background:transparent;border-color:transparent;padding:4px 8px;margin-left:-8px}
+.packname:hover,.packname:focus{background:var(--raised)}
+.packmeta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.packmeta .tag{background:var(--raised);border-radius:99px;padding:2px 10px;font-size:12px;color:var(--contrast)}
+.packmeta .tag.th{background:rgba(139,92,246,.22)}
+.packlist{max-height:min(52vh,460px);overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px}
+.packgroup>b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+.packmod{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;cursor:pointer}
+.packmod:hover{background:var(--raised)}
+.packmod input{width:18px;height:18px;accent-color:var(--brand);flex:none}
+.packico{width:40px;height:40px;border-radius:10px;overflow:hidden;flex:none;display:block}.packico img{width:100%;height:100%;object-fit:cover}
+.packmod>div{flex:1;min-width:0}.packmod b{display:block;color:var(--contrast)}
+.packmod small{display:block;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.packmod .dl{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:12px;flex:none}.packmod .dl .i{width:13px;height:13px}
+.packmod.off{opacity:.45}
+.packmeta .tag{text-transform:none}

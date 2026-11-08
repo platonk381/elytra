@@ -133,6 +133,7 @@ function pageHome() {
     <div style="display:flex;gap:10px">
       ${recent[0] ? `<button class="btn brand big" onclick='play(${jsArg(recent[0].id)})'>${ico("play")}${T("home.play_in", {name: recent[0].name})}</button>` : `<button class="btn brand big" onclick="openCreate()">${ico("plus")}${T("home.first")}</button>`}
       <button class="btn big" onclick="go('browse')">${ico("compass")}${T("home.open_browse")}</button>
+      ${typeof openDescribe === "function" ? `<button class="btn big magicbtn" onclick="openDescribe()">✨ ${T("pack.btn")}</button>` : ""}
     </div>
   </div></div>
   ${statsHtml}
@@ -668,6 +669,7 @@ function openCreate() {
   newLoader = "fabric"; newIcon = null; newTpl = "";
   const vs = S.versions.length ? S.versions : [t("cr.loading")];
   modal(`<h3>${T("nav.new")}<button class="btn icon ghost" onclick="closeModal()">${ico("x")}</button></h3>
+    ${typeof openDescribe === "function" ? `<button class="magicbanner" onclick="openDescribe()"><span>✨</span><div><b>${T("pack.banner")}</b><small>${T("pack.banner_sub")}</small></div>${ico("arrow")}</button>` : ""}
     <div class="field" style="display:flex;gap:16px;align-items:center">
       <div class="newav avedit" id="nIcon" title="${T("av.choose")}" onclick="pickNewIcon()">${newIconHtml()}</div>
       <div style="flex:1"><label>${T("cr.name")}</label><input class="input" id="nName" placeholder="${T("cr.name_ph")}" maxlength="40" style="width:100%;margin-top:4px"></div></div>
