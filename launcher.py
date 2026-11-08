@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.12"
+VERSION = "0.10.13"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -677,6 +677,30 @@ def support_cfg():
             return _support["cfg"]
     _support.update(cfg=cfg, checked=time.time())
     return cfg
+
+
+_donate = {"data": None, "checked": 0}
+
+
+def donate_info():
+    """{url, supporters} from the website (docs/donate.json), so the link and the thank-you list
+    can change without a new Elytra release."""
+    if _donate["data"] is not None and time.time() - _donate["checked"] < 3600:
+        return _donate["data"]
+    user, repo = UPDATE_REPO.split("/")
+    out = {"url": "", "supporters": []}
+    for u in (f"https://{user}.github.io/{repo}/donate.json", f"https://cdn.jsdelivr.net/gh/{UPDATE_REPO}@main/docs/donate.json"):
+        try:
+            d = json.loads(open_url(u, timeout=10, read=True).decode("utf-8"))
+            url = str(d.get("url") or "")
+            out = {"url": url if url.startswith("https://") else "",
+                   "supporters": [{"name": str(x.get("name", ""))[:40], "note": str(x.get("note", ""))[:80]}
+                                  for x in (d.get("supporters") or [])[:100] if isinstance(x, dict) and x.get("name")]}
+            break
+        except Exception:
+            continue
+    _donate.update(data=out, checked=time.time())
+    return out
 
 
 def support_state():
@@ -4149,6 +4173,16 @@ class Api:
             q["title"] = str(note)[:120]
         webbrowser.open(f"https://github.com/{UPDATE_REPO}/issues/new?" + urllib.parse.urlencode(q))
         return {"copied": copied, "text": text}
+
+    @endpoint
+    def get_donate(self):
+        return donate_info()
+
+    @endpoint
+    def open_donate(self):
+        url = donate_info().get("url")
+        if url:
+            webbrowser.open(url)
 
     @endpoint
     def support_chat(self, poll=False):

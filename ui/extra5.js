@@ -17,7 +17,6 @@ function netPanel() {
       <button class="btn ghost" onclick="call('open_app_log')">${ico("file")}${T("net.log")}</button>
       <button class="btn ghost" onclick="openSupport()">${ico("info")}${T("sup.chat_btn")}</button>
       <button class="btn ghost" onclick="call('open_url','https://platonk381.github.io/elytra/support.html')">${ico("globe")}${T("sup.site")}</button></div>
-    <p style="font-size:12px;color:var(--muted);margin:10px 0 0">${T("sup.sub")}</p>
     <p style="font-size:12px;color:var(--muted);margin:12px 0 0">${T("net.credit")}</p></div>`;
 }
 function drawNet() { const g = $("#netGrid"); if (g) g.innerHTML = netRows(); }
@@ -112,3 +111,13 @@ async function toggleDiscord(el) {
 document.addEventListener("keydown", e => {
   if (e.key === "F11") { e.preventDefault(); call("toggle_fullscreen").catch(() => {}); }
 });
+
+/* Support the project: donation link + thank-you list, both read from the website */
+function donatePanel() {
+  const d = S.donate;
+  if (!d || !d.url) return "";
+  const sup = d.supporters || [];
+  return `<div class="panel donate"><div class="dhead"><div class="dheart">❤</div><div style="flex:1"><label style="margin:0">${T("don.title")}</label><p style="margin:4px 0 0">${T("don.sub")}</p></div>
+    <button class="btn brand" onclick="call('open_donate')">${T("don.btn")}</button></div>
+    ${sup.length ? `<div class="dthanks"><b>${T("don.thanks")}</b><div class="dnames">${sup.map(x => `<span class="dname" title="${esc(x.note || "")}">${esc(x.name)}</span>`).join("")}</div></div>` : ""}</div>`;
+}

@@ -729,6 +729,7 @@ function pageSettings() {
         <label class="sw custom ${s.accent && !ACCENTS.includes(s.accent) ? "on" : ""}" style="--c:${esc(s.accent && !ACCENTS.includes(s.accent) ? s.accent : "#888")}" title="${T("set.accent_custom")}">${ico("edit")}<input type="color" value="${esc(s.accent || "#1bd96a")}" onchange="selectAccent(this.value)"></label></div></div>
   </div>
   ${netPanel()}
+  ${typeof donatePanel === "function" ? donatePanel() : ""}
   <div class="panel">
     <div class="field"><label>${T("set.ram")}: <span id="ramV" style="color:var(--brand)">${esc(gb(s.ram))}</span></label>
       <p>${T("set.ram_sub", {total: ((S.sys.ram_total || 0) / 1024).toFixed(0), rec: ((S.sys.ram_recommended || 0) / 1024).toFixed(1)})}</p>
@@ -941,6 +942,7 @@ async function init() {
   applyTheme(S.settings.theme); applyAccent(S.settings.accent); applyStaticText(); applyStreamer();
   S.needOnb = !S.settings.onboarded;
   go("home"); loadVersions();
+  call("get_donate").then(r => { if (r) { S.donate = r; if (S.page === "settings") render(); } }).catch(() => {});
   (d.pending || []).forEach(p => p.type === "preflight" ? showPreflight(p.id, null, p.issues) : toast(tm(p), p.kind));
   if (S.settings.splash === false) return hideSplash();
   startSplash();

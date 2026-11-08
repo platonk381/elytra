@@ -131,6 +131,7 @@ function paletteEntries(q) {
   add("folder", t("lib.folder"), t("pal.action"), () => call("open_folder"));
   add("zap", t("keys.title"), "?", showKeys);
   add("info", t("sup.chat_btn"), t("pal.action"), openSupport);
+  if (S.donate && S.donate.url) add("heart", t("don.btn"), t("pal.action"), () => call("open_donate"));
   add("info", t("sup.btn"), "GitHub", reportProblem);
   add("globe", t("sup.site"), t("pal.action"), () => call("open_url", "https://platonk381.github.io/elytra/support.html"));
   add("gift", t("wr.home_title"), "Wrapped", () => openWrapped());

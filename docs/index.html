@@ -105,6 +105,16 @@
   </div>
 </div></section>
 
+<section id="donate" style="display:none;padding-top:0"><div class="wrap">
+  <div class="donbox">
+    <div class="donheart">❤</div>
+    <div style="flex:1;min-width:260px"><h2 data-t="h_don">Поддержать Elytra</h2>
+      <p class="sub" style="margin:8px 0 0" data-t="p_don">Elytra бесплатная, без рекламы, и её делает один человек. Если лаунчер нравится — можно закинуть немного: это помогает выпускать обновления.</p></div>
+    <a class="btn main" id="donBtn" href="#" target="_blank" rel="noopener" data-t="b_don">Поддержать</a>
+    <div class="donthanks" id="donThanks" style="display:none"><b data-t="t_don">Спасибо поддержавшим</b><div class="donnames" id="donNames"></div></div>
+  </div>
+</div></section>
+
 <section id="faq"><div class="wrap">
   <div class="center reveal"><div class="kick" data-t="k_faq">Вопросы</div><h2 data-t="h_faq">Частые вопросы</h2></div>
   <div class="faq">
@@ -120,7 +130,7 @@
     <img src="img/logo.png" alt="">
     <h2 data-t="h_final">Готов взлететь?</h2>
     <p class="sub" style="margin:0 auto 30px" data-t="p_final">Скачай Elytra и запусти свою первую сборку за пару минут.</p>
-    <a class="btn main" href="https://github.com/platonk381/elytra/releases/latest/download/Elytra.exe"><span data-t="dl">Скачать для Windows</span></a>
+    <a class="btn main" href="https://github.com/platonk381/elytra/releases/latest/download/Elytra-Setup.exe"><span data-t="dl">Скачать для Windows</span></a>
   </div>
 </div></section>
 
@@ -163,7 +173,7 @@ const EN = {
   q5:"Can I move instances from another launcher?", a5:"Yes: Library → “Move from another launcher”. Modrinth App, CurseForge, Prism, MultiMC, TLauncher and the official launcher are supported.",
   q6:"How do I update Elytra?", a6:"You don't — it offers the update itself when a new version is out.",
   h_final:"Ready for take-off?", p_final:"Download Elytra and launch your first modpack in a couple of minutes.",
-  n_news:"What's new", n_support:"Support", portable:"portable version", k_news:"What's new", h_news:"Elytra keeps getting better",
+  h_don:"Support Elytra", p_don:"Elytra is free, has no ads and is made by one person. If you like it, you can chip in — it helps keep the updates coming.", b_don:"Support", t_don:"Thanks to our supporters", n_news:"What's new", n_support:"Support", portable:"portable version", k_news:"What's new", h_news:"Elytra keeps getting better",
   p_news:"New versions arrive right in the launcher — just press “Update”.", k_sup:"Support", h_sup:"Something not working?",
   p_sup:"Check the fixes for common problems or send a report straight from the launcher — we'll sort it out.", sup_btn:"Open support", sup_bug:"Report a bug",
   disc:"Not affiliated with Mojang or Microsoft. Minecraft is a trademark of Mojang AB.", rel:"All releases"
@@ -200,6 +210,17 @@ fetch("https://api.github.com/repos/platonk381/elytra/releases?per_page=4").then
     return `<div class="newsitem in"><div class="nh"><b>Elytra ${esc(r.tag_name.replace(/^v/, ""))}</b>${i === 0 ? `<span class="tagnew">${L ? "latest" : "последняя"}</span>` : ""}<span class="nd">${date(r.published_at)}</span></div>${items ? `<ul>${items}</ul>` : ""}</div>`;
   }).join("");
 }).catch(() => { document.getElementById("news").style.display = "none"; });
+fetch("donate.json", {cache: "no-store"}).then(r => r.json()).then(d => {
+  if (!d.url || !/^https:\/\//.test(d.url)) return;
+  document.getElementById("donBtn").href = d.url;
+  document.getElementById("donate").style.display = "";
+  const sup = (d.supporters || []).filter(x => x && x.name);
+  if (sup.length) {
+    const esc2 = t => String(t).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+    document.getElementById("donNames").innerHTML = sup.map(x => `<span title="${esc2(x.note || "")}">${esc2(x.name)}</span>`).join("");
+    document.getElementById("donThanks").style.display = "";
+  }
+}).catch(() => {});
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12});
 document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 </script>

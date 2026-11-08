@@ -867,3 +867,11 @@ body.aurora .fl-box{background:rgba(30,22,58,.9);backdrop-filter:blur(30px);bord
 .supform textarea{width:100%;resize:vertical;min-height:70px;background:var(--raised);color:var(--text);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;font:inherit}
 .supbar{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
 .supchk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);cursor:pointer}
+
+/* donate */
+.panel.donate{background:linear-gradient(135deg,rgba(236,72,153,.12),rgba(139,92,246,.10)),var(--bg2)}
+.dhead{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.dheart{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:22px;color:#fff;background:linear-gradient(135deg,#ec4899,#8b5cf6);flex:none}
+.dthanks{margin-top:16px}.dthanks b{color:var(--contrast);font-size:13px}
+.dnames{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.dname{background:var(--raised);border-radius:99px;padding:4px 12px;font-size:13px;color:var(--contrast)}

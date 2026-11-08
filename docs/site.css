@@ -129,3 +129,9 @@ footer a:hover{color:#fff}
 .steps2 div{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 22px 18px 70px;position:relative}
 .steps2 div::before{counter-increment:s2;content:counter(s2);position:absolute;left:22px;top:16px;width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--v),var(--p));display:grid;place-items:center;font-weight:900}
 @media (max-width:900px){.supbanner{grid-template-columns:1fr;padding:30px}.supbtns{justify-content:flex-start}.contact{grid-template-columns:1fr}}
+
+.donbox{display:flex;gap:24px;align-items:center;flex-wrap:wrap;padding:34px;border-radius:28px;border:1px solid rgba(236,72,153,.3);background:linear-gradient(135deg,rgba(236,72,153,.14),rgba(139,92,246,.12))}
+.donheart{width:64px;height:64px;border-radius:20px;display:grid;place-items:center;font-size:30px;background:linear-gradient(135deg,#ec4899,#8b5cf6);flex:none}
+.donthanks{flex-basis:100%}.donthanks b{font-size:14px;color:var(--muted)}
+.donnames{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.donnames span{background:rgba(255,255,255,.08);border-radius:99px;padding:6px 14px;font-size:14px;font-weight:600}

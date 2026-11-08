@@ -770,7 +770,11 @@ const I18N = {
   "sup.fail": "Couldn't send the message ({err}). Check your internet",
   "sup.rate": "Too many messages — try again in an hour",
   "sup.empty": "Write a message first",
-  "sup.long": "The message is too long — make it shorter"
+  "sup.long": "The message is too long — make it shorter",
+  "don.title": "Support Elytra",
+  "don.sub": "Elytra is free and made by one person. If you like it, you can chip in — it helps keep it going.",
+  "don.btn": "Support",
+  "don.thanks": "Thanks to our supporters"
  },
  "ru": {
   "u.gb": "ГБ",
@@ -1542,7 +1546,11 @@ const I18N = {
   "sup.fail": "Не удалось отправить сообщение ({err}). Проверь интернет",
   "sup.rate": "Слишком много сообщений — попробуй через час",
   "sup.empty": "Сначала напиши сообщение",
-  "sup.long": "Сообщение слишком длинное — сократи его"
+  "sup.long": "Сообщение слишком длинное — сократи его",
+  "don.title": "Поддержать Elytra",
+  "don.sub": "Elytra бесплатная, её делает один человек. Если нравится — можно закинуть немного: это помогает развивать лаунчер.",
+  "don.btn": "Поддержать",
+  "don.thanks": "Спасибо поддержавшим"
  },
  "uk": {
   "u.gb": "ГБ",
@@ -2314,7 +2322,11 @@ const I18N = {
   "sup.fail": "Не вдалося надіслати повідомлення ({err}). Перевір інтернет",
   "sup.rate": "Забагато повідомлень — спробуй за годину",
   "sup.empty": "Спочатку напиши повідомлення",
-  "sup.long": "Повідомлення задовге — скороти його"
+  "sup.long": "Повідомлення задовге — скороти його",
+  "don.title": "Підтримати Elytra",
+  "don.sub": "Elytra безкоштовна, її робить одна людина. Якщо подобається — можна закинути трохи: це допомагає розвивати лаунчер.",
+  "don.btn": "Підтримати",
+  "don.thanks": "Дякуємо тим, хто підтримав"
  },
  "de": {
   "u.gb": "GB",
@@ -3086,7 +3098,11 @@ const I18N = {
   "sup.fail": "Nachricht konnte nicht gesendet werden ({err}). Prüfe dein Internet",
   "sup.rate": "Zu viele Nachrichten — versuche es in einer Stunde",
   "sup.empty": "Schreib zuerst eine Nachricht",
-  "sup.long": "Die Nachricht ist zu lang — kürze sie"
+  "sup.long": "Die Nachricht ist zu lang — kürze sie",
+  "don.title": "Elytra unterstützen",
+  "don.sub": "Elytra ist kostenlos und wird von einer Person gemacht. Wenn es dir gefällt, kannst du etwas beitragen — das hilft, es weiterzuentwickeln.",
+  "don.btn": "Unterstützen",
+  "don.thanks": "Danke an unsere Unterstützer"
  },
  "es": {
   "u.gb": "GB",
@@ -3858,6 +3874,10 @@ const I18N = {
   "sup.fail": "No se pudo enviar el mensaje ({err}). Revisa tu conexión",
   "sup.rate": "Demasiados mensajes: inténtalo en una hora",
   "sup.empty": "Escribe un mensaje primero",
-  "sup.long": "El mensaje es demasiado largo: acórtalo"
+  "sup.long": "El mensaje es demasiado largo: acórtalo",
+  "don.title": "Apoyar Elytra",
+  "don.sub": "Elytra es gratis y la hace una sola persona. Si te gusta, puedes aportar algo: ayuda a seguir mejorándola.",
+  "don.btn": "Apoyar",
+  "don.thanks": "Gracias a quienes nos apoyan"
  }
 };
