@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.3"
+VERSION = "0.10.4"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app

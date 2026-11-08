@@ -42,9 +42,16 @@ jobs:
           python -m pip install pywebview minecraft-launcher-lib requests
           # PyInstaller with its launcher compiled here instead of the prebuilt one that antivirus
           # heuristics often flag (a well-known false positive). Falls back to the normal package.
-          $env:PYINSTALLER_COMPILE_BOOTLOADER = "1"
-          python -m pip install --no-binary pyinstaller --no-cache-dir pyinstaller
-          if ($LASTEXITCODE -ne 0) { Remove-Item Env:PYINSTALLER_COMPILE_BOOTLOADER; python -m pip install pyinstaller }
+          python -m pip download pyinstaller --no-binary pyinstaller --no-deps -d pyi_src
+          $tar = Get-ChildItem pyi_src\*.tar.gz | Select-Object -First 1
+          tar -xzf $tar.FullName -C pyi_src
+          $dir = Get-ChildItem pyi_src -Directory | Select-Object -First 1
+          Push-Location "$($dir.FullName)\bootloader"
+          python ./waf all --target-arch=64bit
+          $ok = $LASTEXITCODE
+          Pop-Location
+          if ($ok -eq 0) { Write-Host "Bootloader compiled from source"; python -m pip install "$($dir.FullName)" }
+          else { Write-Host "Bootloader build failed, using the prebuilt one"; python -m pip install pyinstaller }
           $common = @("--noconfirm", "--windowed", "--name", "Elytra", "--icon", "icon.ico", "--add-data", "ui;ui", "--add-data", "icon.ico;.", "--noupx")
           # folder build for the installer
           python -m PyInstaller @common --onedir --distpath build_dir --workpath build_onedir launcher.py
