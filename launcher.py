@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.9"
+VERSION = "0.10.10"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -1092,6 +1092,68 @@ def install_fabric_like(kind, mc, lv, task, full=False):
 
 
 # ---------------- game installation ----------------
+_skip_tl = threading.local()
+
+
+def _install_skip_hooks():
+    """Wrap minecraft-launcher-lib's version/asset installers so one thread can skip re-checking a
+    vanilla version it has just verified. Other threads are unaffected."""
+    if getattr(mll.install, "_elytra_hooks", False):
+        return
+    orig_imv, orig_assets = mll.install.install_minecraft_version, mll.install.install_assets
+
+    def imv(version, minecraft_directory, callback=None):
+        if getattr(_skip_tl, "mc", None) == version:
+            return
+        return orig_imv(version, minecraft_directory, callback=callback)
+
+    def assets(versiondata, *a, **kw):
+        mc = getattr(_skip_tl, "mc", None)
+        if mc and mc in (versiondata.get("id"), versiondata.get("inheritsFrom")):
+            return
+        return orig_assets(versiondata, *a, **kw)
+    mll.install.install_minecraft_version = imv
+    mll.install.install_assets = assets
+    if hasattr(mll, "forge") and hasattr(mll.forge, "install_minecraft_version"):
+        mll.forge.install_minecraft_version = imv
+    mll.install._elytra_hooks = True
+
+
+class skip_vanilla_checks:
+    def __init__(self, mc):
+        self.mc = mc
+
+    def __enter__(self):
+        if self.mc:
+            try:
+                _install_skip_hooks()
+            except Exception as e:
+                log(f"skip hooks: {type(e).__name__}: {e}")
+            _skip_tl.mc = self.mc
+
+    def __exit__(self, *exc):
+        _skip_tl.mc = None
+
+
+def prefetch_forge(fv, task):
+    """Download Forge's libraries in parallel first; the installer then finds them and only checks hashes."""
+    try:
+        task.set_status(msg("st.prepare", mc=f"Forge {fv}"))
+        body = open_url(f"https://maven.minecraftforge.net/net/minecraftforge/forge/{fv}/forge-{fv}-installer.jar", timeout=60, read=True)
+        libs = []
+        with zipfile.ZipFile(io.BytesIO(body)) as zf:
+            for name in ("install_profile.json", "version.json"):
+                try:
+                    libs += json.loads(zf.read(name)).get("libraries", [])
+                except KeyError:
+                    pass
+        jobs = [j for j in lib_jobs(libs, "https://maven.minecraftforge.net/") if j[0].startswith("https://")]
+        if jobs:
+            parallel_download(task, jobs)
+    except Exception as e:
+        log(f"forge prefetch skipped: {type(e).__name__}: {e}")
+
+
 def forge_java(mc):
     if data["settings"]["java"]:
         return data["settings"]["java"]
@@ -1125,9 +1187,14 @@ def install_loader(mc, loader, lv, task, full=False):
         fv = f"{mc}-{lv}" if lv else mll.forge.find_forge_version(mc)
         if not fv:
             raise LauncherError("err.forge_missing", mc=mc)
-        prefetch_vanilla(mc, task)
-        mll.install.install_minecraft_version(mc, BASE, callback=task.cb)
-        mll.forge.install_forge_version(fv, BASE, callback=task.cb, java=forge_java(mc))
+        complete = prefetch_vanilla(mc, task)
+        if full or not complete:
+            mll.install.install_minecraft_version(mc, BASE, callback=task.cb)
+        prefetch_forge(fv, task)
+        # The forge installer re-checks the whole vanilla game (thousands of asset hashes) three times;
+        # it was just verified/downloaded above, so skip those passes.
+        with skip_vanilla_checks(mc if (complete and not full) else None):
+            mll.forge.install_forge_version(fv, BASE, callback=task.cb, java=forge_java(mc))
         return mll.forge.forge_to_installed_version(fv), fv.split("-", 1)[1]
     raise LauncherError("err.loader_unsupported", loader=loader)
 
