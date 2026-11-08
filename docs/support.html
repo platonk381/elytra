@@ -26,7 +26,7 @@
   <div class="wrap" style="position:relative;z-index:2">
     <div class="pill" data-t="pill">Обычно ответ — в течение дня</div>
     <h1><span data-t="h1">Техподдержка</span> <span class="grad">Elytra</span></h1>
-    <p class="lead" data-t="lead">Большинство проблем решается за минуту. Найди свою ниже — или отправь отчёт прямо из лаунчера.</p>
+    <p class="lead" data-t="lead">Большинство проблем решается за минуту. Найди свою ниже — или напиши разработчику прямо из лаунчера.</p>
     <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
       <input id="q" placeholder="Например: вылетает, антивирус, Modrinth…" data-tp="ph"></div>
     <div class="cats" id="cats">
@@ -66,12 +66,12 @@
   </div>
   <p class="nores" id="nores" data-t="nores">Ничего не нашлось — отправь отчёт, разберёмся.</p>
 
-  <div class="center reveal" style="margin-top:100px"><div class="kick" data-t="k_rep">Отчёт о проблеме</div><h2 data-t="h_rep">Отправь отчёт за 30 секунд</h2>
-    <p class="sub" data-t="p_rep">Отчёт сам соберёт версию, сведения о системе и лог ошибок — личных данных и паролей в нём нет.</p></div>
+  <div class="center reveal" style="margin-top:100px"><div class="kick" data-t="k_rep">Чат с разработчиком</div><h2 data-t="h_rep">Напиши прямо из Elytra</h2>
+    <p class="sub" data-t="p_rep">Без регистрации: пишешь в лаунчере — разработчик отвечает, ответ приходит туда же. К первому сообщению прикладывается отчёт (версия, система, лог ошибок) — без паролей.</p></div>
   <div class="steps2" data-t="rep_steps">
-    <div>В Elytra открой <b>Настройки</b> и нажми <b>«Сообщить о проблеме»</b> (или Ctrl+K → «Сообщить о проблеме»).</div>
-    <div>Отчёт скопируется, и откроется форма на GitHub — коротко опиши, что случилось.</div>
-    <div>Вставь отчёт в поле «Отчёт Elytra» (Ctrl+V) и нажми <b>Submit</b>.</div>
+    <div>В Elytra открой <b>Настройки</b> → <b>«Написать в поддержку»</b> (или Ctrl+K → «Написать в поддержку»).</div>
+    <div>Опиши, что случилось, и нажми <b>«Отправить»</b>.</div>
+    <div>Когда разработчик ответит, Elytra покажет уведомление — ответ будет в том же чате.</div>
   </div>
 
   <div class="contact">
@@ -93,7 +93,7 @@
 <script>
 const EN = {
   n_feat:"Features", n_news:"What's new", n_support:"Support", dl_short:"Download", pill:"We usually reply within a day", h1:"Support",
-  lead:"Most problems take a minute to fix. Find yours below — or send a report straight from the launcher.", ph:"For example: crashes, antivirus, Modrinth…",
+  lead:"Most problems take a minute to fix. Find yours below — or message the developer straight from the launcher.", ph:"For example: crashes, antivirus, Modrinth…",
   c_all:"All", c_start:"Launching", c_net:"Downloads & network", c_game:"Game", c_mods:"Mods & instances", c_acc:"Account & skin",
   t_start:"Launch", t_net:"Network", t_game:"Game", t_mods:"Mods", t_acc:"Account",
   q1:"Windows says “Windows protected your PC”", a1:"<ol><li>Click “More info”.</li><li>Click “Run anyway”.</li></ol><p>Windows shows this for any program without a paid code-signing certificate. Elytra's code is open on GitHub.</p>",
@@ -108,9 +108,9 @@ const EN = {
   q10:"An instance is “Broken” and won't start", a10:"<p>This happens if Elytra was closed during an install. Press “Repair” to finish it, or delete the instance.</p>",
   q11:"My skin doesn't show", a11:"<p>The skin is fetched by nickname from Mojang's servers. If the nickname isn't a licensed account, the default skin is shown. Check your nickname in Settings.</p>",
   q12:"How do I update Elytra?", a12:"<p>Elytra shows a “New version available” banner — press “Update”. If something goes wrong, download Elytra-Setup.exe from this site and run it over the old one.</p>",
-  nores:"Nothing found — send a report and we'll sort it out.", k_rep:"Problem report", h_rep:"Send a report in 30 seconds",
-  p_rep:"The report collects the version, system info and the error log — no personal data or passwords.",
-  rep_steps:"<div>In Elytra open <b>Settings</b> and press <b>“Report a problem”</b> (or Ctrl+K → “Report a problem”).</div><div>The report is copied and a GitHub form opens — briefly describe what happened.</div><div>Paste the report into the “Elytra report” field (Ctrl+V) and press <b>Submit</b>.</div>",
+  nores:"Nothing found — send a report and we'll sort it out.", k_rep:"Chat with the developer", h_rep:"Write straight from Elytra",
+  p_rep:"No sign-up: write in the launcher, the developer replies and the answer arrives right there. A report (version, system, error log, no passwords) is attached to the first message.",
+  rep_steps:"<div>In Elytra open <b>Settings</b> → <b>“Write to support”</b> (or Ctrl+K → “Write to support”).</div><div>Describe what happened and press <b>Send</b>.</div><div>When the developer replies, Elytra shows a notification — the answer is in the same chat.</div>",
   cc1:"Report a bug", cc1d:"A GitHub form: needs a free account. You'll see when it's fixed.", cc1b:"Open the form",
   cc2:"Suggest an idea", cc2d:"What's missing in Elytra? The best ideas make it into the next versions.", cc2b:"Suggest",
   cc3:"All reports", cc3d:"See whether someone already ran into your problem.", cc3b:"Browse",

@@ -847,3 +847,23 @@ body.aurora .netrow{background:rgba(255,255,255,.06);border:1px solid rgba(255,2
 .tgame:hover{background:rgba(255,255,255,.14)}
 body.aurora .fl-box{background:rgba(30,22,58,.9);backdrop-filter:blur(30px);border-color:rgba(255,255,255,.14)}
 .seg button:disabled{opacity:.35;cursor:not-allowed}
+
+/* support chat */
+.suphead{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.suphead small{color:var(--muted)}
+.supava{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,var(--brand),#8b5cf6);color:#fff;flex:none}
+.supava svg{width:22px;height:22px}
+.suplist{height:min(46vh,420px);overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:14px;background:var(--raised);border-radius:16px}
+.supmsg{display:flex;flex-direction:column;max-width:78%}
+.supmsg.me{align-self:flex-end;align-items:flex-end}
+.supmsg.dev{align-self:flex-start}
+.supb{user-select:text;padding:10px 14px;border-radius:16px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.supmsg.me .supb{background:var(--brand);color:#06240f;border-bottom-right-radius:5px}
+.supmsg.dev .supb{background:var(--btn);border:1px solid rgba(255,255,255,.08);border-bottom-left-radius:5px}
+.supmsg small{color:var(--muted);font-size:11px;margin:4px 6px 0}
+.supempty{margin:auto;display:flex;gap:14px;align-items:flex-start;max-width:440px;color:var(--muted)}
+.supempty b{color:var(--contrast)}.supempty p{margin:4px 0 0}
+.supform{margin-top:12px}
+.supform textarea{width:100%;resize:vertical;min-height:70px;background:var(--raised);color:var(--text);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px 14px;font:inherit}
+.supbar{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.supchk{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);cursor:pointer}

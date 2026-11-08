@@ -130,7 +130,8 @@ function paletteEntries(q) {
   add("restore", t("im.btn"), t("pal.action"), openImport);
   add("folder", t("lib.folder"), t("pal.action"), () => call("open_folder"));
   add("zap", t("keys.title"), "?", showKeys);
-  add("info", t("sup.btn"), t("pal.action"), reportProblem);
+  add("info", t("sup.chat_btn"), t("pal.action"), openSupport);
+  add("info", t("sup.btn"), "GitHub", reportProblem);
   add("globe", t("sup.site"), t("pal.action"), () => call("open_url", "https://platonk381.github.io/elytra/support.html"));
   add("gift", t("wr.home_title"), "Wrapped", () => openWrapped());
   add("wings", "Elytra Flight", t("fl.home_sub"), openFlight);

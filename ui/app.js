@@ -110,7 +110,7 @@ function renderChrome() {
   $("#railInst").innerHTML = S.instances.slice(0, 4).map(i =>
     `<div class="rail-inst" title="${esc(i.name)}" onclick='go("instance",${jsArg(i.id)})'>${icon(i.icon, i.name)}${i.running ? '<span class="dot"></span>' : ""}</div>`).join("");
   const run = S.instances.filter(i => i.running);
-  $("#runChip").innerHTML = run.length ? `<div class="chip"><span class="pulse"></span>${T("top.running", {names: run.map(i => i.name).join(", ")})}</div>` : "";
+  $("#runChip").innerHTML = (run.length ? `<div class="chip"><span class="pulse"></span>${T("top.running", {names: run.map(i => i.name).join(", ")})}</div>` : "") + (typeof supChip === "function" ? supChip() : "");
 }
 
 /* ---------- home ---------- */
@@ -893,6 +893,7 @@ window.onLauncherEvent = (type, d) => {
   } else if (type === "achievement") showAchievement(d);
   else if (type === "self_update") { S.selfUpdate = d; toast(t("self.available", {v: d.version}), "ok"); if (["home", "settings"].includes(S.page) && !$("#modal").classList.contains("open")) render(); }
   else if (type === "net") { S.net = d; drawNet(); }
+  else if (type === "support") onSupport(d);
   else if (type === "content_changed" && S.page === "instance" && S.current === d.id && S.itab === "content") loadContent();
 };
 
@@ -935,7 +936,7 @@ async function loadVersions() {
 async function init() {
   const d = await call("init");
   Object.assign(S, {instances: d.instances, settings: d.settings, servers: d.servers, appVersion: d.version,
-    media: d.media || "", net: d.net || {}, game: d.game || {best: 0, plays: 0}, logPath: d.log || "", accounts: d.accounts || [], features: d.features || {}, sets: d.sets || [],
+    media: d.media || "", net: d.net || {}, supUnread: d.sup_unread || 0, game: d.game || {best: 0, plays: 0}, logPath: d.log || "", accounts: d.accounts || [], features: d.features || {}, sets: d.sets || [],
     sys: {ram_total: d.ram_total, ram_recommended: d.ram_recommended}});
   applyTheme(S.settings.theme); applyAccent(S.settings.accent); applyStaticText(); applyStreamer();
   S.needOnb = !S.settings.onboarded;

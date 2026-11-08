@@ -11,7 +11,7 @@ import http.client, urllib.parse, urllib.request, urllib.error, traceback, concu
 import webview
 import minecraft_launcher_lib as mll
 
-VERSION = "0.10.6"
+VERSION = "0.10.7"
 
 # ============================ SETUP (see SETUP.md) ============================
 MS_CLIENT_ID = ""        # Azure «Application (client) ID» — paste it after Mojang approves the app
@@ -591,6 +591,87 @@ def build_report(lines=60):
     except OSError:
         out.append("(no log)")
     return mask_home("\n".join(out))
+
+
+# ---------------- support chat (Cloudflare Worker + Telegram bot, see support/worker.js) ----------------
+SUPPORT_CFG = f"https://{UPDATE_REPO.split('/')[0]}.github.io/{UPDATE_REPO.split('/')[1]}/support.json"
+_support = {"url": None, "checked": 0}
+
+
+def support_url():
+    """Address of the support worker; read from the website so it can change without a release."""
+    if _support["url"] is not None and time.time() - _support["checked"] < 3600:
+        return _support["url"]
+    url = ""
+    try:
+        cfg = json.loads(open_url(SUPPORT_CFG, timeout=10, read=True).decode("utf-8"))
+        url = str(cfg.get("chat") or "").rstrip("/")
+        if not url.startswith("https://"):
+            url = ""
+    except Exception as e:
+        log(f"support cfg: {type(e).__name__}: {e}")
+        if _support["url"]:
+            return _support["url"]
+    _support.update(url=url, checked=time.time())
+    return url
+
+
+def support_state():
+    with lock:
+        s = data.setdefault("support", {})
+        if not s.get("tid"):
+            s.update(tid=secrets.token_hex(16), key=secrets.token_hex(24), msgs=[], seen=0)
+            save()
+        return s
+
+
+def support_call(path, body=None, query=None):
+    base = support_url()
+    if not base:
+        raise LauncherError("sup.off")
+    url = base + path + ("?" + urllib.parse.urlencode(query) if query else "")
+    try:
+        req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None,
+                                     headers={**UA, "Content-Type": "application/json"}, method="POST" if body is not None else "GET")
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        code = {429: "sup.rate", 503: "sup.off"}.get(e.code, "sup.fail")
+        raise LauncherError(code, err=f"HTTP {e.code}")
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        raise LauncherError("sup.fail", err=type(e).__name__)
+
+
+def support_merge(msgs):
+    """Store the server's copy of the chat; returns how many developer replies are new."""
+    with lock:
+        s = data.setdefault("support", {})
+        old = {(m.get("from"), m.get("ts"), m.get("text")) for m in s.get("msgs", [])}
+        new = [m for m in msgs if m.get("from") == "dev" and (m.get("from"), m.get("ts"), m.get("text")) not in old]
+        s["msgs"] = [{"from": m.get("from"), "text": str(m.get("text", ""))[:4000], "ts": int(m.get("ts") or 0)} for m in msgs][-200:]
+        save()
+        return len(new)
+
+
+def support_unread():
+    s = data.get("support") or {}
+    return sum(1 for m in s.get("msgs", []) if m.get("from") == "dev" and m.get("ts", 0) > s.get("seen", 0))
+
+
+def support_poller():
+    """While a conversation is recent, check for replies every minute and tell the UI."""
+    while True:
+        time.sleep(60)
+        try:
+            s = data.get("support") or {}
+            msgs = s.get("msgs") or []
+            if not msgs or time.time() - max(m.get("ts", 0) for m in msgs) > 14 * 86400:
+                continue
+            r = support_call("/api/poll", query={"tid": s["tid"], "key": s["key"]})
+            if support_merge(r.get("msgs", [])):
+                emit("support", {"msgs": data["support"]["msgs"], "unread": support_unread(), "new": True})
+        except Exception:
+            pass
 
 
 def copy_text(text):
@@ -3557,7 +3638,7 @@ class Api:
     def init(self):
         return {"instances": instances_list(), "settings": data["settings"], "servers": data["servers"],
                 "version": VERSION, "ram_total": system_ram_mb(), "ram_recommended": recommended_ram(),
-                "media": MEDIA_BASE, "net": net_status(), "game": data.get("game", {"best": 0, "plays": 0}), "log": os.path.join(BASE, "elytra.log"), "accounts": public_accounts(), "sets": public_sets(),
+                "media": MEDIA_BASE, "net": net_status(), "sup_unread": support_unread(), "game": data.get("game", {"best": 0, "plays": 0}), "log": os.path.join(BASE, "elytra.log"), "accounts": public_accounts(), "sets": public_sets(),
                 "pending": [PENDING.pop(0) for _ in range(len(PENDING))],
                 "features": {"ms": ms_enabled(), "license_only": ms_enabled() and LICENSE_ONLY,
                              "discord": bool(DISCORD_CLIENT_ID), "updates": bool(UPDATE_REPO),
@@ -3780,6 +3861,38 @@ class Api:
             q["title"] = str(note)[:120]
         webbrowser.open(f"https://github.com/{UPDATE_REPO}/issues/new?" + urllib.parse.urlencode(q))
         return {"copied": copied, "text": text}
+
+    @endpoint
+    def support_chat(self, poll=False):
+        st = support_state()
+        enabled = bool(support_url())
+        if enabled and poll and st.get("msgs"):
+            try:
+                support_merge(support_call("/api/poll", query={"tid": st["tid"], "key": st["key"]}).get("msgs", []))
+            except LauncherError:
+                pass
+        with lock:
+            st["seen"] = max([int(time.time())] + [m.get("ts", 0) for m in st.get("msgs", [])])
+            save()
+        return {"enabled": enabled, "msgs": st.get("msgs", [])}
+
+    @endpoint
+    def support_send(self, text, report=False):
+        text = str(text or "").strip()[:2000]
+        if not text:
+            raise LauncherError("sup.empty")
+        st = support_state()
+        acc = next((a for a in data["accounts"] if a["id"] == data["settings"].get("account")), None)
+        body = {"tid": st["tid"], "key": st["key"], "text": text, "version": VERSION,
+                "name": acc["name"] if acc else data["settings"].get("nick", "")}
+        if report:
+            body["report"] = build_report(120)
+        r = support_call("/api/send", body)
+        support_merge(r.get("msgs", []))
+        with lock:
+            st["seen"] = max([int(time.time())] + [m.get("ts", 0) for m in st.get("msgs", [])])
+            save()
+        return {"msgs": data["support"]["msgs"]}
 
     @endpoint
     def recheck_network(self):
@@ -4310,6 +4423,7 @@ if __name__ == "__main__":
     patch_requests()
     log(f"Elytra {VERSION} start, python {sys.version.split()[0]}")
     probe_network()
+    threading.Thread(target=support_poller, daemon=True).start()
     start_media_server()
     write_instance_file()
     try:
