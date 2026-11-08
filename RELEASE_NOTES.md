@@ -1,3 +1,3 @@
-- Installer now uses a folder build: starts faster and triggers far fewer antivirus false alarms
-- Installed Elytra updates itself silently through the installer
-- PyInstaller launcher compiled from source in the release build
+- PyInstaller launcher is now really compiled from source in the release build (fewer antivirus false alarms)
+- Installer ships Elytra as a folder build; installed copies update themselves silently
+- Every Minecraft version in the create dialog: releases, snapshots, beta and alpha
